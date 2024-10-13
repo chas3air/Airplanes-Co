@@ -1,0 +1,27 @@
+version: '3.7'
+
+networks:
+  db:
+
+services:
+  psql_db:
+    build:
+      context: ./psql
+    container_name: psql_cont
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: 123
+    networks:
+      - db
+
+  dal:
+    build: 
+      context: ./DAL
+    container_name: dal
+    ports:
+      - "80:8056"
+    # depends_on:
+    #   - psql_db
+    networks:
+      - db

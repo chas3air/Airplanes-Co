@@ -24,12 +24,14 @@ func MustNewPsqlCustomersStorage(db *sql.DB) PsqlCustomersStorage {
 			password VARCHAR(255) NOT NULL,
 			role VARCHAR(50),
 			surname VARCHAR(100),
-			name VARCHAR(100),
+			name VARCHAR(100)
 		);
 	`)
 
 	if err != nil {
-		panic("Ошибка при создании таблицы для пользователей: " + fmt.Errorf("%s: %w", op, err).Error())
+		var g int
+		log.Println("Ошибка при создании таблицы для пользователей: " + fmt.Errorf("%s: %w", op, err).Error())
+		fmt.Scan(&g)
 	}
 
 	return PsqlCustomersStorage{
@@ -66,6 +68,10 @@ func (s PsqlCustomersStorage) GetAll(ctx context.Context) (any, error) {
 
 func (s PsqlCustomersStorage) GetById(ctx context.Context, id int) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlCustomers.GetById"
+	err := s.DB.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("DB is unavailable, file: %s: %w", op, err)
+	}
 
 	row := s.DB.QueryRowContext(ctx, `
 		SELECT * FROM `+config.PSQL_CUSTOMERS_TABLE_NAME+`
@@ -74,7 +80,7 @@ func (s PsqlCustomersStorage) GetById(ctx context.Context, id int) (any, error) 
 
 	customer := models.Customer{}
 
-	err := row.Scan(&customer.Id, &customer.Login,
+	err = row.Scan(&customer.Id, &customer.Login,
 		&customer.Password, &customer.Role, &customer.Surname, &customer.Name)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -88,6 +94,12 @@ func (s PsqlCustomersStorage) GetById(ctx context.Context, id int) (any, error) 
 
 func (s PsqlCustomersStorage) GetByLoginAndPassword(ctx context.Context, login string, password string) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlCustomers.GetByLoginAndPassword"
+
+	err := s.DB.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("DB is unavailable, file: %s: %w", op, err)
+	}
+
 	row := s.DB.QueryRowContext(ctx, `
 		SELECT * FROM `+config.PSQL_CUSTOMERS_TABLE_NAME+`
 		WHERE login = $1 AND password = $2
@@ -95,7 +107,7 @@ func (s PsqlCustomersStorage) GetByLoginAndPassword(ctx context.Context, login s
 
 	customer := models.Customer{}
 
-	err := row.Scan(&customer.Id, &customer.Login,
+	err = row.Scan(&customer.Id, &customer.Login,
 		&customer.Password, &customer.Role, &customer.Surname, &customer.Name)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -110,12 +122,17 @@ func (s PsqlCustomersStorage) GetByLoginAndPassword(ctx context.Context, login s
 func (s PsqlCustomersStorage) Insert(ctx context.Context, innerObj any) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlCustomers.Insert"
 
+	err := s.DB.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("DB is unavailable, file: %s: %w", op, err)
+	}
+
 	customer := innerObj.(models.Customer)
 	var id int = -1
 
-	err := s.DB.QueryRowContext(ctx,
+	err = s.DB.QueryRowContext(ctx,
 		`INSERT INTO `+config.PSQL_CUSTOMERS_TABLE_NAME+`
-		(login, password, role, surname, name, age) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id
+		(login, password, role, surname, name) VALUES ($1, $2, $3, $4, $5) RETURNING id
 		`, customer.Login, customer.Password, customer.Role, customer.Surname, customer.Name).Scan(&id)
 
 	if err != nil {
@@ -127,13 +144,18 @@ func (s PsqlCustomersStorage) Insert(ctx context.Context, innerObj any) (any, er
 func (s PsqlCustomersStorage) Update(ctx context.Context, innerObj any) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlCustomers.Update"
 
+	err := s.DB.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("DB is unavailable, file: %s: %w", op, err)
+	}
+
 	customer := innerObj.(models.Customer)
 
-	_, err := s.DB.ExecContext(ctx,
+	_, err = s.DB.ExecContext(ctx,
 		`UPDATE `+config.PSQL_CUSTOMERS_TABLE_NAME+`
-		SET login = $1, password = $2, role = $3, surname = $4, name = $5, age = $6
-		WHERE id = $7;
-	`, customer.Login, customer.Password, customer.Role, customer.Surname, customer.Name)
+		SET login = $1, password = $2, role = $3, surname = $4, name = $5
+		WHERE id = $6;
+	`, customer.Login, customer.Password, customer.Role, customer.Surname, customer.Name, customer.Id)
 
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", op, err)
@@ -143,6 +165,11 @@ func (s PsqlCustomersStorage) Update(ctx context.Context, innerObj any) (any, er
 
 func (s PsqlCustomersStorage) Delete(ctx context.Context, id int) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlCustomers.Delete"
+
+	err := s.DB.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("DB is unavailable, file: %s: %w", op, err)
+	}
 
 	customer, err := s.GetById(ctx, id)
 	if err != nil {

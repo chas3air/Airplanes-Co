@@ -3,6 +3,7 @@ package psql
 import (
 	"database/sql"
 	"fmt"
+	"log"
 
 	"github.com/chas3air/Airplanes-Co/DAL/internal/config"
 )
@@ -17,23 +18,21 @@ func NewPsqlStorage(db *sql.DB) PsqlStorage {
 
 func InitDB() *sql.DB {
 	const op = "DAL.internal.storage.psqlRepository.InitDB"
-	
-	// Если вы используете Docker Compose, используйте имя сервиса в качестве хоста.
+
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		config.PSQL_DB_USER,
 		config.PSQL_DB_PASSWORD,
-		config.PSQL_DB_HOST, // Здесь укажите имя контейнера или IP-адрес
-		config.PSQL_DB_PORT, // Убедитесь, что порт указан (обычно 5432)
+		config.PSQL_DB_HOST,
+		config.PSQL_DB_PORT,
 		config.PSQL_DB_DBNAME)
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		panic(fmt.Errorf("%s: %s", op, err))
+		log.Fatalln(fmt.Errorf("%s: %s", op, err))
 	}
 
-	// Проверка соединения
 	if err := db.Ping(); err != nil {
-		panic(fmt.Errorf("%s: %s", op, err))
+		log.Fatalln(fmt.Errorf("%s: %s", op, err))
 	}
 
 	return db
