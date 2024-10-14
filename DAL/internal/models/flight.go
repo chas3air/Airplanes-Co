@@ -6,11 +6,11 @@ import (
 )
 
 type Flight struct {
-	Id             int       `json:"id" bson:"id" gorm:"primaryKey"`
-	FromWhere      string    `json:"fromWhere" bson:"fromWhere" gorm:"column:fromWhere"`
-	Destination    string    `json:"destination" bson:"destination" gorm:"column:destination"`
-	FlightTime     time.Time `json:"flightTime" bson:"flightTime" gorm:"column:flightTime"`
-	FlightDuration int       `json:"flightDuration" bson:"flightDuration" gorm:"column:flightDuration"`
+	Id             int       `json:"id" bson:"id"`
+	FromWhere      string    `json:"fromWhere" bson:"fromWhere"`
+	Destination    string    `json:"destination" bson:"destination"`
+	FlightTime     time.Time `json:"flightTime" bson:"flightTime"`
+	FlightDuration int       `json:"flightDuration" bson:"flightDuration"`
 }
 
 func (f Flight) String() string {

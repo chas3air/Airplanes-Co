@@ -9,7 +9,7 @@ services:
       context: ./psql
     container_name: psql_cont
     ports:
-      - "5432:5432"
+      - "5000:5432"
     environment:
       POSTGRES_PASSWORD: 123
     networks:

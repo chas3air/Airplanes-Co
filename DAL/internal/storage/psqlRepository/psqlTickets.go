@@ -177,6 +177,6 @@ func (s PsqlTicketsStorage) Delete(ctx context.Context, id int) (any, error) {
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
-	log.Println("Deleted ticket with id=%d\n", id)
+	log.Printf("Deleted ticket with id=%d\n", id)
 	return ticket, nil
 }
