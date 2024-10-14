@@ -16,18 +16,10 @@ type PsqlFlightsStorage struct {
 
 func MustNewPsqlFlightsStorage(db *sql.DB) PsqlFlightsStorage {
 	const op = "DAL.internal.storage.psqlRepository.newFlightsStorage"
-	_, err := db.Exec(`
-		CREATE TABLE IF NOT EXISTS ` + config.PSQL_FLIGHTS_TABLE_NAME + ` (
-			id SERIAL PRIMARY KEY,
-			from_where VARCHAR(50) NOT NULL,
-			destination VARCHAR(50) NOT NULL,
-			flight_time TIMESTAMP(50) NOT NULL,
-			flight_duration INT NOT NULL
-		);
-	`)
-
+	err := db.Ping()
 	if err != nil {
-		panic("Ошибка при создании таблицы для рейсов: " + fmt.Errorf("%s: %w", op, err).Error())
+		log.Println("Table of flights is unavailable: " + err.Error())
+		log.Panic(fmt.Errorf("%s: %w", op, err))
 	}
 
 	return PsqlFlightsStorage{
@@ -39,6 +31,7 @@ func (s PsqlFlightsStorage) GetAll(ctx context.Context) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlFlights.GetAll"
 	rows, err := s.DB.QueryContext(ctx, `SELECT * FROM `+config.PSQL_FLIGHTS_TABLE_NAME+`;`)
 	if err != nil {
+		log.Println("Error querying flights:", err.Error())
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
@@ -49,16 +42,18 @@ func (s PsqlFlightsStorage) GetAll(ctx context.Context) (any, error) {
 	for rows.Next() {
 		err := rows.Scan(&flight.Id, &flight.FromWhere, &flight.Destination, &flight.FlightTime, &flight.FlightDuration)
 		if err != nil {
-			log.Println("Строка несчитана, ошибка", err.Error())
+			log.Println("Error scanning row:", err.Error())
 			continue
 		}
 		flights = append(flights, flight)
 	}
 
 	if err := rows.Err(); err != nil {
+		log.Println("Row error:", err)
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
+	log.Println("Count of retrieved flights:", len(flights))
 	return flights, nil
 }
 
@@ -73,10 +68,14 @@ func (s PsqlFlightsStorage) GetById(ctx context.Context, id int) (any, error) {
 	err := row.Scan(&flight.Id, &flight.FromWhere, &flight.Destination, &flight.FlightTime, &flight.FlightDuration)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("%s: запись с id=%d не найдена", op, id)
+			log.Printf("No flight found with id=%d\n", id)
+			return nil, fmt.Errorf("%s: No flight found with id=%d", op, id)
 		}
+		log.Println("Error scanning flight:", err.Error())
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
+
+	log.Printf("Retrieved flight`s id: %d\n", flight.Id)
 	return flight, nil
 }
 
@@ -91,8 +90,11 @@ func (s PsqlFlightsStorage) Insert(ctx context.Context, innerObj any) (any, erro
 		VALUES ($1, $2, $3, $4)  RETURNING id
 		`, flight.FromWhere, flight.Destination, flight.FlightTime, flight.FlightDuration).Scan(&id)
 	if err != nil {
+		log.Println("Error inserting flight:", err.Error())
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
+
+	log.Printf("Inserted flight with id=%d\n", id)
 	return s.GetById(ctx, id)
 }
 
@@ -106,9 +108,11 @@ func (s PsqlFlightsStorage) Update(ctx context.Context, innerObj any) (any, erro
 	`, flight.FromWhere, flight.Destination, flight.FlightTime, flight.FlightDuration, flight.Id)
 
 	if err != nil {
+		log.Println("Error updating flight:", err.Error())
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
+	log.Printf("Updated flight with id=%d\n", flight.Id)
 	return s.GetById(ctx, flight.Id)
 }
 
@@ -117,6 +121,7 @@ func (s PsqlFlightsStorage) Delete(ctx context.Context, id int) (any, error) {
 
 	flight, err := s.GetById(ctx, id)
 	if err != nil {
+		log.Println("Error getting flight by id:", err)
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
@@ -126,8 +131,10 @@ func (s PsqlFlightsStorage) Delete(ctx context.Context, id int) (any, error) {
 	`, id)
 
 	if err != nil {
+		log.Println("Error deleting flight:", err)
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
+	log.Printf("Deleted flight with id=%d\n", id)
 	return flight, nil
 }
