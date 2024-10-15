@@ -21,7 +21,7 @@ services:
     container_name: dal
     ports:
       - "80:8056"
-    # depends_on:
-    #   - psql_db
+    depends_on:
+      - psql_db
     networks:
       - db

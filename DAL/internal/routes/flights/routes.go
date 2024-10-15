@@ -7,7 +7,9 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
+	"github.com/chas3air/Airplanes-Co/DAL/internal/config"
 	"github.com/chas3air/Airplanes-Co/DAL/internal/models"
 	"github.com/chas3air/Airplanes-Co/DAL/internal/storage"
 	"github.com/gorilla/mux"
@@ -18,11 +20,20 @@ var FlightsDB = storage.MustGetInstanceOfFlightsStorage("psql")
 func GetFlights(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching all flights")
 
+	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	defer cancel()
+
 	entities, err := FlightsDB.GetAll(context.Background())
 	if err != nil {
-		log.Println("Error retriecing flights")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Println("Request timed out")
+			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
+			return
+		} else {
+			log.Println("Error retriecing flights")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	flights, ok := entities.([]models.Flight)
@@ -48,12 +59,21 @@ func GetFlights(w http.ResponseWriter, r *http.Request) {
 func GetFlightById(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fecthing flight by id")
 
+	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	defer cancel()
+
 	id_s := mux.Vars(r)["id"]
 	id, err := strconv.Atoi(id_s)
 	if err != nil {
-		log.Printf("Bad request: invalid ID: %s\n", id_s)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Println("Request timed out")
+			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
+			return
+		} else {
+			log.Printf("Bad request: invalid ID: %s\n", id_s)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 
 	entity, err := FlightsDB.GetById(context.Background(), id)
@@ -66,7 +86,7 @@ func GetFlightById(w http.ResponseWriter, r *http.Request) {
 	flight, ok := entity.(models.Flight)
 	if !ok {
 		log.Println("Invalid data type")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Invalid data type", http.StatusInternalServerError)
 		return
 	}
 
@@ -86,11 +106,15 @@ func GetFlightById(w http.ResponseWriter, r *http.Request) {
 func InsertFlight(w http.ResponseWriter, r *http.Request) {
 	log.Println("Flight insertion")
 
+	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	defer cancel()
+
 	bs, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Bad request: cannot read request body")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+
 	}
 	defer r.Body.Close()
 
@@ -104,9 +128,15 @@ func InsertFlight(w http.ResponseWriter, r *http.Request) {
 
 	obj, err := FlightsDB.Insert(context.Background(), flight)
 	if err != nil {
-		log.Printf("Error inserting flight with id: %d\n", flight.Id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Println("Request timed out")
+			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
+			return
+		} else {
+			log.Printf("Error inserting flight with id: %d\n", flight.Id)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	out_bs, err := json.Marshal(obj)
@@ -124,6 +154,10 @@ func InsertFlight(w http.ResponseWriter, r *http.Request) {
 
 func UpdateFlight(w http.ResponseWriter, r *http.Request) {
 	log.Println("Flight updating")
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	defer cancel()
+
 	bs, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Bad request: cannot read request body")
@@ -141,9 +175,15 @@ func UpdateFlight(w http.ResponseWriter, r *http.Request) {
 
 	obj, err := FlightsDB.Update(context.Background(), flight)
 	if err != nil {
-		log.Printf("Error updating flight with id: %d\n", flight.Id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Println("Request timed out")
+			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
+			return
+		} else {
+			log.Printf("Error updating flight with id: %d\n", flight.Id)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	out_bs, err := json.Marshal(obj)
@@ -162,6 +202,9 @@ func UpdateFlight(w http.ResponseWriter, r *http.Request) {
 func DeleteFlight(w http.ResponseWriter, r *http.Request) {
 	log.Println("Flight deleting")
 
+	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	defer cancel()
+
 	id_s := mux.Vars(r)["id"]
 	id, err := strconv.Atoi(id_s)
 	if err != nil {
@@ -172,9 +215,15 @@ func DeleteFlight(w http.ResponseWriter, r *http.Request) {
 
 	obj, err := FlightsDB.Delete(context.Background(), id)
 	if err != nil {
-		log.Println("Error deliting flight with id:", id)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Println("Request timed out")
+			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
+			return
+		} else {
+			log.Println("Error deliting flight with id:", id)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	out_bs, err := json.Marshal(obj)

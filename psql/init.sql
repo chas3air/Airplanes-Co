@@ -11,13 +11,13 @@ CREATE TABLE IF NOT EXISTS Customers (
     name VARCHAR(100)
 );
 
--- CREATE TABLE IF NOT EXISTS Flights (
---     id SERIAL PRIMARY KEY,
---     from_where VARCHAR(50) NOT NULL,
---     destination VARCHAR(50) NOT NULL,
---     flight_time TIMESTAMP NOT NULL,
---     flight_duration INT NOT NULL
--- );
+CREATE TABLE IF NOT EXISTS Flights (
+    id SERIAL PRIMARY KEY,
+    from_where VARCHAR(50) NOT NULL,
+    destination VARCHAR(50) NOT NULL,
+    flight_time TIMESTAMP NOT NULL,
+    flight_duration INT NOT NULL
+);
 
 -- CREATE TABLE IF NOT EXISTS Tickets (
 --     id SERIAL PRIMARY KEY,

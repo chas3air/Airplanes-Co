@@ -13,5 +13,3 @@ const (
 	з
 	PSQL_LIMIT_RESPONSE_TIME = 10 // sec
 )
-
-// TODO описать констаны для mongodb

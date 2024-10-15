@@ -16,8 +16,6 @@ type PsqlTicketsStorage struct {
 	PsqlStorage
 }
 
-// TODO: все переделать запросы
-
 func MustNewPsqlTicketsStorage(db *sql.DB) PsqlTicketsStorage {
 	const op = "DAL.internal.storage.psqlRepository.newTicketStorage"
 	err := db.Ping()

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/chas3air/Airplanes-Co/DAL/internal/config"
 	"github.com/chas3air/Airplanes-Co/DAL/internal/models"
 	"github.com/chas3air/Airplanes-Co/DAL/internal/storage"
 	"github.com/gorilla/mux"
@@ -19,11 +20,10 @@ var CustomersDB = storage.MustGetInstanceOfCustomersStorage("psql")
 func GetCustomers(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching all customers")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
 	defer cancel()
 
-	//TODO: порешать вопрос с контекстом
-	entities, err := CustomersDB.GetAll(context.Background())
+	entities, err := CustomersDB.GetAll(ctx)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			log.Println("Request timed out")
@@ -59,6 +59,9 @@ func GetCustomers(w http.ResponseWriter, r *http.Request) {
 func GetCustomerById(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching customers by id")
 
+	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	defer cancel()
+
 	id_s := mux.Vars(r)["id"]
 	id, err := strconv.Atoi(id_s)
 	if err != nil {
@@ -69,9 +72,15 @@ func GetCustomerById(w http.ResponseWriter, r *http.Request) {
 
 	entity, err := CustomersDB.GetById(context.Background(), id)
 	if err != nil {
-		log.Printf("Error retrieving customer by id: %s\n", err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Println("Request timed out")
+			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
+			return
+		} else {
+			log.Printf("Error retrieving customer by id: %s\n", err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	customer, ok := entity.(models.Customer)
@@ -97,6 +106,9 @@ func GetCustomerById(w http.ResponseWriter, r *http.Request) {
 func InsertCustomer(w http.ResponseWriter, r *http.Request) {
 	log.Println("Customer insertion")
 
+	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	defer cancel()
+
 	bs, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Bad request: cannot read request body")
@@ -115,9 +127,15 @@ func InsertCustomer(w http.ResponseWriter, r *http.Request) {
 
 	obj, err := CustomersDB.Insert(context.Background(), customer)
 	if err != nil {
-		log.Printf("Error inserting customer with id: %d\n", customer.Id)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Println("Request timed out")
+			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
+			return
+		} else {
+			log.Printf("Error inserting customer with id: %d\n", customer.Id)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 
 	out_bs, err := json.Marshal(obj)
@@ -135,6 +153,9 @@ func InsertCustomer(w http.ResponseWriter, r *http.Request) {
 
 func UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 	log.Println("Customer updating")
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	defer cancel()
 
 	bs, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -154,9 +175,15 @@ func UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 
 	obj, err := CustomersDB.Update(context.Background(), customer)
 	if err != nil {
-		log.Printf("Error updating customer with ID %d: %s", customer.Id, err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Println("Request timed out")
+			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
+			return
+		} else {
+			log.Printf("Error updating customer with ID %d: %s", customer.Id, err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	out_bs, err := json.Marshal(obj)
@@ -175,6 +202,9 @@ func UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 func DeleteCustomer(w http.ResponseWriter, r *http.Request) {
 	log.Println("Customers deleting")
 
+	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	defer cancel()
+
 	id_s := mux.Vars(r)["id"]
 	id, err := strconv.Atoi(id_s)
 	if err != nil {
@@ -185,9 +215,15 @@ func DeleteCustomer(w http.ResponseWriter, r *http.Request) {
 
 	obj, err := CustomersDB.Delete(context.Background(), id)
 	if err != nil {
-		log.Printf("Error deleting customer with ID %d: %s", id, err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Println("Request timed out")
+			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
+			return
+		} else {
+			log.Printf("Error deleting customer with ID %d: %s", id, err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	out_bs, err := json.Marshal(obj)
