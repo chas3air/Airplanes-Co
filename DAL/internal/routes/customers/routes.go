@@ -53,11 +53,11 @@ func GetCustomers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(bs)
-	log.Println("Succesfully fetched customers.")
+	log.Println("Successfully fetched customers.")
 }
 
 func GetCustomerById(w http.ResponseWriter, r *http.Request) {
-	log.Println("Fetching customers by id")
+	log.Println("Fetching customer by ID")
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
 	defer cancel()
@@ -70,14 +70,14 @@ func GetCustomerById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entity, err := CustomersDB.GetById(context.Background(), id)
+	entity, err := CustomersDB.GetById(ctx, id)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			log.Println("Request timed out")
 			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
 			return
 		} else {
-			log.Printf("Error retrieving customer by id: %s\n", err.Error())
+			log.Printf("Error retrieving customer by ID: %s\n", err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -100,11 +100,11 @@ func GetCustomerById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(bs)
-	log.Println("Succesfully fatched customer by id.")
+	log.Println("Successfully fetched customer by ID.")
 }
 
 func InsertCustomer(w http.ResponseWriter, r *http.Request) {
-	log.Println("Customer insertion")
+	log.Println("Inserting customer")
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
 	defer cancel()
@@ -125,15 +125,15 @@ func InsertCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	obj, err := CustomersDB.Insert(context.Background(), customer)
+	obj, err := CustomersDB.Insert(ctx, customer)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			log.Println("Request timed out")
 			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
 			return
 		} else {
-			log.Printf("Error inserting customer with id: %d\n", customer.Id)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			log.Printf("Error inserting customer with ID: %d\n", customer.Id)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
@@ -148,11 +148,11 @@ func InsertCustomer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(out_bs)
-	log.Printf("Succesfully inserted customer with id: %d\n", customer.Id)
+	log.Printf("Successfully inserted customer with ID: %d\n", customer.Id)
 }
 
 func UpdateCustomer(w http.ResponseWriter, r *http.Request) {
-	log.Println("Customer updating")
+	log.Println("Updating customer")
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
 	defer cancel()
@@ -173,7 +173,7 @@ func UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	obj, err := CustomersDB.Update(context.Background(), customer)
+	obj, err := CustomersDB.Update(ctx, customer)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			log.Println("Request timed out")
@@ -188,7 +188,7 @@ func UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 
 	out_bs, err := json.Marshal(obj)
 	if err != nil {
-		log.Printf("Cannot marshal updated customer")
+		log.Println("Cannot marshal updated customer")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -200,7 +200,7 @@ func UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteCustomer(w http.ResponseWriter, r *http.Request) {
-	log.Println("Customers deleting")
+	log.Println("Deleting customer")
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
 	defer cancel()
@@ -208,12 +208,12 @@ func DeleteCustomer(w http.ResponseWriter, r *http.Request) {
 	id_s := mux.Vars(r)["id"]
 	id, err := strconv.Atoi(id_s)
 	if err != nil {
-		log.Println("Bad request: wrong flight id")
+		log.Println("Bad request: wrong customer ID")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	obj, err := CustomersDB.Delete(context.Background(), id)
+	obj, err := CustomersDB.Delete(ctx, id)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			log.Println("Request timed out")

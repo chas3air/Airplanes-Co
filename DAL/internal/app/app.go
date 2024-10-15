@@ -5,6 +5,7 @@ import (
 
 	"github.com/chas3air/Airplanes-Co/DAL/internal/routes/customers"
 	"github.com/chas3air/Airplanes-Co/DAL/internal/routes/flights"
+	"github.com/chas3air/Airplanes-Co/DAL/internal/routes/tickets"
 	"github.com/gorilla/mux"
 )
 
@@ -23,11 +24,11 @@ func Run() {
 	router.HandleFunc("/postgres/flights/update", flights.UpdateFlight).Methods(http.MethodPatch)
 	router.HandleFunc("/postgres/flights/delete/{id:[0-9]+}", flights.DeleteFlight).Methods(http.MethodDelete)
 
-	// router.HandleFunc("/postgres/tickets/get", routes.GetTickets).Methods(http.MethodGet)
-	// router.HandleFunc("/postgres/tickets/get/{id:[0-9]+}", routes.GetTicketById).Methods(http.MethodGet)
-	// router.HandleFunc("/postgres/ticket/insert", routes.InsertTicket).Methods(http.MethodPut)
-	// router.HandleFunc("/postgres/ticket/update", routes.UpdateTicket).Methods(http.MethodPatch)
-	// router.HandleFunc("/postgres/ticket/delete", routes.DeleteTicket).Methods(http.MethodDelete)
+	router.HandleFunc("/postgres/tickets/get", tickets.GetTickets).Methods(http.MethodGet)
+	router.HandleFunc("/postgres/tickets/get/{id:[0-9]+}", tickets.GetTicketById).Methods(http.MethodGet)
+	router.HandleFunc("/postgres/ticket/insert", tickets.InsertTicket).Methods(http.MethodPut)
+	router.HandleFunc("/postgres/ticket/update", tickets.UpdateTicket).Methods(http.MethodPatch)
+	router.HandleFunc("/postgres/ticket/delete", tickets.DeleteTicket).Methods(http.MethodDelete)
 
 	http.ListenAndServe(":8056", router)
 }
