@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/chas3air/Airplanes-Co/DAL/internal/config"
 	"github.com/chas3air/Airplanes-Co/DAL/internal/models"
@@ -30,6 +31,8 @@ func MustNewPsqlCustomersStorage(db *sql.DB) PsqlCustomersStorage {
 
 func (s PsqlCustomersStorage) GetAll(ctx context.Context) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlCustomers.GetAll"
+
+	time.Sleep(4 * time.Second)
 
 	err := s.DB.Ping()
 	if err != nil {
