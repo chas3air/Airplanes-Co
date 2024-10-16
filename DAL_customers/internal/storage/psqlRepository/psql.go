@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/chas3air/Airplanes-Co/DAL/internal/config"
+	"github.com/chas3air/Airplanes-Co/DAL_customers/internal/config"
 
 	_ "github.com/lib/pq"
 )

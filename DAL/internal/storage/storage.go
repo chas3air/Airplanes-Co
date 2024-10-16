@@ -9,17 +9,6 @@ import (
 
 var db = psql.InitDB()
 
-func MustGetInstanceOfCustomersStorage(query string) intefaces.ICustomersRepository {
-	const op = "DAL.internal.storage.mustGetInstanceOfCustomersStorage"
-	switch query {
-	//case "mongo":
-	case "psql":
-		return psql.MustNewPsqlCustomersStorage(db)
-	default:
-		panic(fmt.Errorf("%s: %s", op, "undefined query string"))
-	}
-}
-
 func MustGetInstanceOfFlightsStorage(query string) intefaces.IFlightsRepository {
 	const op = "DAL.internal.storage.mustGetInstanceOfFlightsStorage"
 	switch query {

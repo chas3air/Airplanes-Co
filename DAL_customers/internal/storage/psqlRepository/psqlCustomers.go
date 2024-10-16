@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/chas3air/Airplanes-Co/DAL/internal/config"
-	"github.com/chas3air/Airplanes-Co/DAL/internal/models"
+	"github.com/chas3air/Airplanes-Co/DAL_customers/internal/config"
+	"github.com/chas3air/Airplanes-Co/DAL_customers/internal/models"
 )
 
 type PsqlCustomersStorage struct {

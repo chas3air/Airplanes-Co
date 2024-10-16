@@ -3,7 +3,6 @@ package app
 import (
 	"net/http"
 
-	"github.com/chas3air/Airplanes-Co/DAL/internal/routes/customers"
 	"github.com/chas3air/Airplanes-Co/DAL/internal/routes/flights"
 	"github.com/chas3air/Airplanes-Co/DAL/internal/routes/tickets"
 	"github.com/gorilla/mux"
@@ -11,12 +10,6 @@ import (
 
 func Run() {
 	router := mux.NewRouter()
-
-	router.HandleFunc("/postgres/customers/get", customers.GetCustomers).Methods(http.MethodGet)
-	router.HandleFunc("/postgres/customers/get/{id:[0-9]+}", customers.GetCustomerById).Methods(http.MethodGet)
-	router.HandleFunc("/postgres/customers/insert", customers.InsertCustomer).Methods(http.MethodPut)
-	router.HandleFunc("/postgres/customers/update", customers.UpdateCustomer).Methods(http.MethodPatch)
-	router.HandleFunc("/postgres/customers/delete/{id:[0-9]+}", customers.DeleteCustomer).Methods(http.MethodDelete)
 
 	router.HandleFunc("/postgres/flights/get", flights.GetFlights).Methods(http.MethodGet)
 	router.HandleFunc("/postgres/flights/get/{id:[0-9]+}", flights.GetFlightById).Methods(http.MethodGet)

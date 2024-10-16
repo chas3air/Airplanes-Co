@@ -21,6 +21,7 @@ Airplanes & Co — это сервис для покупки дешевых ав
 
 - Docker
 - Docker Compose
+- Git
 
 ### Клонирование репозитория
 
