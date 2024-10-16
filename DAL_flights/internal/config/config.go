@@ -7,7 +7,7 @@ const (
 	PSQL_DB_PORT     = "5432"
 	PSQL_DB_DBNAME   = "airplanesco"
 
-	PSQL_TICKETS_TABLE_NAME = "Tickets"
+	PSQL_FLIGHTS_TABLE_NAME = "Flights"
 
 	PSQL_LIMIT_RESPONSE_TIME = 10 // sec
 )

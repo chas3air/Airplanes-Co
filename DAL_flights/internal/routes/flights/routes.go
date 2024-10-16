@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/chas3air/Airplanes-Co/DAL/internal/config"
-	"github.com/chas3air/Airplanes-Co/DAL/internal/models"
-	"github.com/chas3air/Airplanes-Co/DAL/internal/storage"
+	"github.com/chas3air/Airplanes-Co/DAL_flights/internal/config"
+	"github.com/chas3air/Airplanes-Co/DAL_flights/internal/models"
+	"github.com/chas3air/Airplanes-Co/DAL_flights/internal/storage"
 	"github.com/gorilla/mux"
 )
 
