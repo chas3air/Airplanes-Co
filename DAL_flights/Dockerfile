@@ -10,6 +10,6 @@ COPY . .
 
 RUN go build -o dal ./cmd/app
 
-EXPOSE 8056
+EXPOSE 12001
 
 CMD ["./dal"]

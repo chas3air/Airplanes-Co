@@ -1,4 +1,4 @@
-module github.com/chas3air/Airplanes-Co/DAL
+module github.com/chas3air/Airplanes-Co/DAL_tickets
 
 go 1.22.3
 

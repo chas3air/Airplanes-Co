@@ -16,5 +16,5 @@ func Run() {
 	router.HandleFunc("/postgres/customers/update", customers.UpdateCustomer).Methods(http.MethodPatch)
 	router.HandleFunc("/postgres/customers/delete/{id:[0-9]+}", customers.DeleteCustomer).Methods(http.MethodDelete)
 
-	http.ListenAndServe(":8057", router)
+	http.ListenAndServe(":12000", router)
 }

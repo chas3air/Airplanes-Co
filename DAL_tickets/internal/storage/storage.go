@@ -3,8 +3,8 @@ package storage
 import (
 	"fmt"
 
-	"github.com/chas3air/Airplanes-Co/DAL/internal/storage/intefaces"
-	psql "github.com/chas3air/Airplanes-Co/DAL/internal/storage/psqlRepository"
+	"github.com/chas3air/Airplanes-Co/DAL_tickets/internal/storage/intefaces"
+	psql "github.com/chas3air/Airplanes-Co/DAL_tickets/internal/storage/psqlRepository"
 )
 
 var db = psql.InitDB()

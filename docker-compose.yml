@@ -14,14 +14,3 @@ services:
       POSTGRES_PASSWORD: 123
     networks:
       - db
-
-  dal:
-    build: 
-      context: ./DAL
-    container_name: dal
-    ports:
-      - "80:8056"
-    depends_on:
-      - psql_db
-    networks:
-      - db
