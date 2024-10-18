@@ -15,13 +15,24 @@ services:
     networks:
       - db
 
-  dal_customers:
+  dal_flights:
     build: 
-      context: ./DAL_customers
-    container_name: dal_customers
+      context: ./Dal_flights
+    container_name: dal_flights
     ports:
-      - "80:12000"
+      - "87:12001"
     depends_on:
       - psql_db
     networks:
       - db
+
+  # dal_tickets:
+  #   build: 
+  #     context: ./dal_tickets
+  #   container_name: dal_tickets
+  #   ports:
+  #     - "87:12002"
+  #   depends_on:
+  #     - psql_db
+  #   networks:
+  #     - db

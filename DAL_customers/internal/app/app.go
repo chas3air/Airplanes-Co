@@ -10,11 +10,11 @@ import (
 func Run() {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/postgres/customers/get", customers.GetCustomers).Methods(http.MethodGet)
-	router.HandleFunc("/postgres/customers/get/{id:[0-9]+}", customers.GetCustomerById).Methods(http.MethodGet)
-	router.HandleFunc("/postgres/customers/insert", customers.InsertCustomer).Methods(http.MethodPut)
-	router.HandleFunc("/postgres/customers/update", customers.UpdateCustomer).Methods(http.MethodPatch)
-	router.HandleFunc("/postgres/customers/delete/{id:[0-9]+}", customers.DeleteCustomer).Methods(http.MethodDelete)
+	router.HandleFunc("/dal/flights/postgres/get", customers.GetCustomers).Methods(http.MethodGet)
+	router.HandleFunc("/dal/flights/postgres/get/{id:[0-9]+}", customers.GetCustomerById).Methods(http.MethodGet)
+	router.HandleFunc("/dal/flights/postgres/insert", customers.InsertCustomer).Methods(http.MethodPost)
+	router.HandleFunc("/dal/flights/postgres/update", customers.UpdateCustomer).Methods(http.MethodPatch)
+	router.HandleFunc("/dal/flights/postgres/delete/{id:[0-9]+}", customers.DeleteCustomer).Methods(http.MethodDelete)
 
 	http.ListenAndServe(":12000", router)
 }
