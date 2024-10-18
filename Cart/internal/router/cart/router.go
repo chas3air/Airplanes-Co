@@ -127,3 +127,13 @@ func DeleteTicketHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(bs)
 	log.Println("Successfully deleting ticket.")
 }
+
+func ClearHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Clear cart")
+
+	config.TicketsCart = make([]models.Ticket, 0, 10)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	log.Println("Successfully clear cart.")
+}

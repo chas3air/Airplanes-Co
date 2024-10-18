@@ -14,3 +14,14 @@ services:
       POSTGRES_PASSWORD: 123
     networks:
       - db
+
+  dal_customers:
+    build: 
+      context: ./DAL_customers
+    container_name: dal_customers
+    ports:
+      - "80:12000"
+    depends_on:
+      - psql_db
+    networks:
+      - db
