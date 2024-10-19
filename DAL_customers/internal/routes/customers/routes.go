@@ -7,10 +7,9 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
-	"github.com/chas3air/Airplanes-Co/DAL_customers/internal/config"
 	"github.com/chas3air/Airplanes-Co/DAL_customers/internal/models"
+	"github.com/chas3air/Airplanes-Co/DAL_customers/internal/service"
 	"github.com/chas3air/Airplanes-Co/DAL_customers/internal/storage"
 	"github.com/gorilla/mux"
 )
@@ -20,7 +19,14 @@ var CustomersDB = storage.MustGetInstanceOfCustomersStorage("psql")
 func GetCustomers(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching all customers")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	limitTime, err := service.GetLimitTime()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	entities, err := CustomersDB.GetAll(ctx)
@@ -59,7 +65,14 @@ func GetCustomers(w http.ResponseWriter, r *http.Request) {
 func GetCustomerById(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching customer by ID")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	limitTime, err := service.GetLimitTime()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	id_s := mux.Vars(r)["id"]
@@ -106,7 +119,14 @@ func GetCustomerById(w http.ResponseWriter, r *http.Request) {
 func InsertCustomer(w http.ResponseWriter, r *http.Request) {
 	log.Println("Inserting customer")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	limitTime, err := service.GetLimitTime()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	bs, err := io.ReadAll(r.Body)
@@ -154,7 +174,14 @@ func InsertCustomer(w http.ResponseWriter, r *http.Request) {
 func UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 	log.Println("Updating customer")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	limitTime, err := service.GetLimitTime()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	bs, err := io.ReadAll(r.Body)
@@ -202,7 +229,14 @@ func UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 func DeleteCustomer(w http.ResponseWriter, r *http.Request) {
 	log.Println("Deleting customer")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	limitTime, err := service.GetLimitTime()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	id_s := mux.Vars(r)["id"]

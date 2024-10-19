@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
-	"github.com/chas3air/Airplanes-Co/DAL_flights/internal/config"
 	"github.com/chas3air/Airplanes-Co/DAL_flights/internal/models"
 )
 
@@ -33,7 +33,7 @@ func MustNewPsqlFlightsStorage(db *sql.DB) PsqlFlightsStorage {
 // It returns a slice of Flight models and an error, if any occurs.
 func (s PsqlFlightsStorage) GetAll(ctx context.Context) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlFlights.GetAll"
-	rows, err := s.DB.QueryContext(ctx, `SELECT * FROM `+config.PSQL_FLIGHTS_TABLE_NAME+`;`)
+	rows, err := s.DB.QueryContext(ctx, `SELECT * FROM `+os.Getenv("PSQL_TABLE_NAME")+`;`)
 	if err != nil {
 		log.Println("Error querying flights:", err.Error())
 		return nil, fmt.Errorf("%s: %v", op, err)
@@ -66,7 +66,7 @@ func (s PsqlFlightsStorage) GetAll(ctx context.Context) (any, error) {
 func (s PsqlFlightsStorage) GetById(ctx context.Context, id int) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlFlights.GetById"
 	row := s.DB.QueryRowContext(ctx, `
-		SELECT * FROM `+config.PSQL_FLIGHTS_TABLE_NAME+`
+		SELECT * FROM `+os.Getenv("PSQL_TABLE_NAME")+`
 		WHERE id = $1;
 	`, id)
 
@@ -93,7 +93,7 @@ func (s PsqlFlightsStorage) Insert(ctx context.Context, innerObj any) (any, erro
 	var id int
 
 	err := s.DB.QueryRowContext(ctx, `
-		INSERT INTO `+config.PSQL_FLIGHTS_TABLE_NAME+`
+		INSERT INTO `+os.Getenv("PSQL_TABLE_NAME")+`
 		(fromWhere, destination, flightTime, flightDuration)
 		VALUES ($1, $2, $3, $4) RETURNING id
 	`, flight.FromWhere, flight.Destination, flight.FlightTime, flight.FlightDuration).Scan(&id)
@@ -113,7 +113,7 @@ func (s PsqlFlightsStorage) Update(ctx context.Context, innerObj any) (any, erro
 	flight := innerObj.(models.Flight)
 
 	_, err := s.DB.ExecContext(ctx, `
-		UPDATE `+config.PSQL_FLIGHTS_TABLE_NAME+`
+		UPDATE `+os.Getenv("PSQL_TABLE_NAME")+`
 		SET fromWhere = $1, destination = $2, flightTime = $3, flightDuration = $4
 		WHERE id = $5;
 	`, flight.FromWhere, flight.Destination, flight.FlightTime, flight.FlightDuration, flight.Id)
@@ -139,7 +139,7 @@ func (s PsqlFlightsStorage) Delete(ctx context.Context, id int) (any, error) {
 	}
 
 	_, err = s.DB.ExecContext(ctx, `
-		DELETE FROM `+config.PSQL_FLIGHTS_TABLE_NAME+`
+		DELETE FROM `+os.Getenv("PSQL_TABLE_NAME")+`
 		WHERE id = $1;
 	`, id)
 

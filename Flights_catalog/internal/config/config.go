@@ -1,3 +1,3 @@
 package config
 
-const ()
+var ()

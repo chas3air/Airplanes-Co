@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
-	"github.com/chas3air/Airplanes-Co/DAL_customers/internal/config"
 	"github.com/chas3air/Airplanes-Co/DAL_customers/internal/models"
 )
 
@@ -40,7 +40,7 @@ func (s PsqlCustomersStorage) GetAll(ctx context.Context) (any, error) {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	rows, err := s.DB.QueryContext(ctx, `SELECT * FROM `+config.PSQL_CUSTOMERS_TABLE_NAME+`;`)
+	rows, err := s.DB.QueryContext(ctx, `SELECT * FROM `+os.Getenv("PSQL_TABLE_NAME")+`;`)
 	if err != nil {
 		log.Println("Error querying customers:", err.Error())
 		return nil, fmt.Errorf("%s: %v", op, err)
@@ -81,7 +81,7 @@ func (s PsqlCustomersStorage) GetById(ctx context.Context, id int) (any, error) 
 	}
 
 	row := s.DB.QueryRowContext(ctx, `
-		SELECT * FROM `+config.PSQL_CUSTOMERS_TABLE_NAME+`
+		SELECT * FROM `+os.Getenv("PSQL_TABLE_NAME")+`
 		WHERE id = $1;
 		`, id)
 
@@ -114,7 +114,7 @@ func (s PsqlCustomersStorage) GetByLoginAndPassword(ctx context.Context, login s
 	}
 
 	row := s.DB.QueryRowContext(ctx, `
-		SELECT * FROM `+config.PSQL_CUSTOMERS_TABLE_NAME+`
+		SELECT * FROM `+os.Getenv("PSQL_TABLE_NAME")+`
 		WHERE login = $1 AND password = $2
 		`, login, password)
 
@@ -150,7 +150,7 @@ func (s PsqlCustomersStorage) Insert(ctx context.Context, innerObj any) (any, er
 	var id int
 
 	err = s.DB.QueryRowContext(ctx,
-		`INSERT INTO `+config.PSQL_CUSTOMERS_TABLE_NAME+`
+		`INSERT INTO `+os.Getenv("PSQL_TABLE_NAME")+`
 		(login, password, role, surname, name) VALUES ($1, $2, $3, $4, $5) RETURNING id
 		`, customer.Login, customer.Password, customer.Role, customer.Surname, customer.Name).Scan(&id)
 
@@ -176,7 +176,7 @@ func (s PsqlCustomersStorage) Update(ctx context.Context, innerObj any) (any, er
 	customer := innerObj.(models.Customer)
 
 	_, err = s.DB.ExecContext(ctx,
-		`UPDATE `+config.PSQL_CUSTOMERS_TABLE_NAME+`
+		`UPDATE `+os.Getenv("PSQL_TABLE_NAME")+`
 		SET login = $1, password = $2, role = $3, surname = $4, name = $5
 		WHERE id = $6;
 	`, customer.Login, customer.Password, customer.Role, customer.Surname, customer.Name, customer.Id)
@@ -208,7 +208,7 @@ func (s PsqlCustomersStorage) Delete(ctx context.Context, id int) (any, error) {
 	}
 
 	_, err = s.DB.ExecContext(ctx, `
-		DELETE FROM `+config.PSQL_CUSTOMERS_TABLE_NAME+`
+		DELETE FROM `+os.Getenv("PSQL_TABLE_NAME")+`
 		WHERE id = $1;
 		`, id)
 

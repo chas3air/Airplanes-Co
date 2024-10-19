@@ -7,15 +7,16 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/chas3air/Airplanes-Co/Cart/internal/config"
 	"github.com/chas3air/Airplanes-Co/Cart/internal/models"
 	"github.com/gorilla/mux"
 )
 
+var TicketsCart = make([]models.Ticket, 0, 10)
+
 func GetAllTicketsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching tickets from cart")
 
-	bs, err := json.Marshal(config.TicketsCart)
+	bs, err := json.Marshal(TicketsCart)
 	if err != nil {
 		log.Println("Cannot marshal tockets")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -47,7 +48,7 @@ func InsertTicketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	config.TicketsCart = append(config.TicketsCart, ticket)
+	TicketsCart = append(TicketsCart, ticket)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -75,9 +76,9 @@ func UpdateTicketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Изменение существующего билета в корзине
-	for i, v := range config.TicketsCart {
+	for i, v := range TicketsCart {
 		if v.Id == ticket.Id {
-			config.TicketsCart[i] = ticket
+			TicketsCart[i] = ticket
 			break
 		}
 	}
@@ -105,8 +106,8 @@ func DeleteTicketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var deletedTicket models.Ticket
-	var newCart = make([]models.Ticket, 0, len(config.TicketsCart))
-	for _, v := range config.TicketsCart {
+	var newCart = make([]models.Ticket, 0, len(TicketsCart))
+	for _, v := range TicketsCart {
 		if v.Id != id {
 			newCart = append(newCart, v)
 		} else {
@@ -114,7 +115,7 @@ func DeleteTicketHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	copy(config.TicketsCart, newCart)
+	copy(TicketsCart, newCart)
 	bs, err := json.Marshal(deletedTicket)
 	if err != nil {
 		log.Println("Cannot marshal ticket")
@@ -131,7 +132,7 @@ func DeleteTicketHandler(w http.ResponseWriter, r *http.Request) {
 func ClearHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Clear cart")
 
-	config.TicketsCart = make([]models.Ticket, 0, 10)
+	TicketsCart = make([]models.Ticket, 0, 10)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

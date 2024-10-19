@@ -19,20 +19,50 @@ services:
     build: 
       context: ./Dal_flights
     container_name: dal_flights
-    ports:
-      - "87:12001"
     depends_on:
       - psql_db
     networks:
       - db
+    ports:
+      - "87:12001"
+    environment:
+      PSQL_DB_USER: postgres
+      PSQL_DB_PASSWORD: 123
+      PSQL_DB_HOST: psql_cont
+      PSQL_DB_PORT: 5432
+      PSQL_DB_DBNAME: airplanesco
+      PSQL_TABLE_NAME: Flights
+      PSQL_LIMIT_RESPONSE_TIME: 10
 
-  # dal_tickets:
-  #   build: 
-  #     context: ./dal_tickets
-  #   container_name: dal_tickets
-  #   ports:
-  #     - "87:12002"
-  #   depends_on:
-  #     - psql_db
-  #   networks:
-  #     - db
+  dal_customers:
+    build: 
+      context: ./Dal_customers
+    container_name: dal_customers
+    depends_on:
+      - psql_db
+    networks:
+      - db
+    ports:
+      - "88:12000"
+    environment:
+      PSQL_DB_USER: postgres
+      PSQL_DB_PASSWORD: 123
+      PSQL_DB_HOST: psql_cont
+      PSQL_DB_PORT: 5432
+      PSQL_DB_DBNAME: airplanesco
+      PSQL_TABLE_NAME: Customers
+      PSQL_LIMIT_RESPONSE_TIME: 10
+
+  catalog:
+    build:
+      context: ./Flights_catalog
+    container_name: catalog
+    ports:
+      - "78:12004"
+    depends_on:
+      - psql_db
+    networks:
+      - db
+    environment:
+      DAL_FLIGHTS_URL: http://dal_flights:12001/dal/flights/postgres/get
+      DAL_LIMIT_RESPONSE_TIME: 5

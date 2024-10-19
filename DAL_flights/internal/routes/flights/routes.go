@@ -7,10 +7,9 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
-	"github.com/chas3air/Airplanes-Co/DAL_flights/internal/config"
 	"github.com/chas3air/Airplanes-Co/DAL_flights/internal/models"
+	"github.com/chas3air/Airplanes-Co/DAL_flights/internal/service"
 	"github.com/chas3air/Airplanes-Co/DAL_flights/internal/storage"
 	"github.com/gorilla/mux"
 )
@@ -20,7 +19,14 @@ var FlightsDB = storage.MustGetInstanceOfFlightsStorage("psql")
 func GetFlights(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching all flights")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	limitTime, err := service.GetLimitTime()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	entities, err := FlightsDB.GetAll(ctx)
@@ -59,7 +65,14 @@ func GetFlights(w http.ResponseWriter, r *http.Request) {
 func GetFlightById(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching flight by ID")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	limitTime, err := service.GetLimitTime()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	id_s := mux.Vars(r)["id"]
@@ -106,7 +119,14 @@ func GetFlightById(w http.ResponseWriter, r *http.Request) {
 func InsertFlight(w http.ResponseWriter, r *http.Request) {
 	log.Println("Inserting flight")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	limitTime, err := service.GetLimitTime()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	bs, err := io.ReadAll(r.Body)
@@ -154,7 +174,14 @@ func InsertFlight(w http.ResponseWriter, r *http.Request) {
 func UpdateFlight(w http.ResponseWriter, r *http.Request) {
 	log.Println("Updating flight")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	limitTime, err := service.GetLimitTime()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	bs, err := io.ReadAll(r.Body)
@@ -202,7 +229,14 @@ func UpdateFlight(w http.ResponseWriter, r *http.Request) {
 func DeleteFlight(w http.ResponseWriter, r *http.Request) {
 	log.Println("Deleting flight")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	limitTime, err := service.GetLimitTime()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	id_s := mux.Vars(r)["id"]
