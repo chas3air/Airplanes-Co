@@ -3,18 +3,18 @@ package app
 import (
 	"net/http"
 
-	"github.com/chas3air/Airplanes-Co/Management_flights/internal/router/management"
+	"github.com/chas3air/Airplanes-Co/Management_flights/internal/router"
 	"github.com/gorilla/mux"
 )
 
 func Run() {
-	router := mux.NewRouter()
+	r := mux.NewRouter()
 
-	router.HandleFunc("/api/flight/getAllFlights", management.GetAllFlightsHandler).Methods(http.MethodGet)
-	router.HandleFunc("/api/flight/getFlightById/{id:[0-9]+}", management.GetFlightByIdHandler).Methods(http.MethodGet)
-	router.HandleFunc("/api/flight/insert", management.InsertFlightsHandler).Methods(http.MethodPost)
-	router.HandleFunc("/api/flight/update", management.UpdateFlightHandler).Methods(http.MethodPatch)
-	router.HandleFunc("/api/flight/delete/{id:[0-9]+}", management.DeleteFlightHandler).Methods(http.MethodDelete)
+	r.HandleFunc("/api/flight/getAllFlights", router.GetAllFlightsHandler).Methods(http.MethodGet)
+	r.HandleFunc("/api/flight/getFlightById/{id:[0-9]+}", router.GetFlightByIdHandler).Methods(http.MethodGet)
+	r.HandleFunc("/api/flight/insert", router.InsertFlightsHandler).Methods(http.MethodPost)
+	r.HandleFunc("/api/flight/update", router.UpdateFlightHandler).Methods(http.MethodPatch)
+	r.HandleFunc("/api/flight/delete/{id:[0-9]+}", router.DeleteFlightHandler).Methods(http.MethodDelete)
 
-	http.ListenAndServe(":12006", router)
+	http.ListenAndServe(":12006", r)
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/chas3air/Airplanes-Co/Auth/internal/models"
 )
 
+// TODO: напеределку
 func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Sign in process")
 

@@ -1,4 +1,4 @@
-package management
+package router
 
 import (
 	"bytes"
@@ -10,25 +10,25 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var dal_flight_url = config.DAL_FLIGHTS_URL
+var database_url = config.DATABASE_URL
 
 // GetAllFlightsHandler handles a GET request to fetch all flights.
 // Returns a list of flights in JSON format.
 func GetAllFlightsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching all flights")
 
-	resp, err := http.Get(dal_flight_url + "/get")
+	resp, err := http.Get(database_url + "/get")
 	if err != nil {
-		log.Println("Error connecting to", dal_flight_url)
-		http.Error(w, "Error connecting to DAL Flights", http.StatusInternalServerError)
+		log.Println("Cannot send request to", database_url)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Cannot read response body")
-		http.Error(w, "Cannot read response body", http.StatusInternalServerError)
+		log.Println("Bad response: cannot read response body")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -45,10 +45,10 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	id_s := mux.Vars(r)["id"]
 
-	resp, err := http.Get(dal_flight_url + "/get/" + id_s)
+	resp, err := http.Get(database_url + "/get/" + id_s)
 	if err != nil {
-		log.Println("Error connecting to", dal_flight_url)
-		http.Error(w, "Error connecting to DAL Flights", http.StatusInternalServerError)
+		log.Println("Cannot send request to", database_url)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
@@ -56,7 +56,7 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println("Cannot read response body")
-		http.Error(w, "Cannot read response body", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -74,29 +74,23 @@ func InsertFlightsHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Bad request: cannot read request body")
-		http.Error(w, "Bad request: cannot read request body", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close() // Close the request body after reading
 
-	resp, err := http.Post(dal_flight_url+"/insert", "application/json", bytes.NewBuffer(body))
+	resp, err := http.Post(database_url+"/insert", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		log.Println("Error sending request")
-		http.Error(w, "Error sending request to DAL Flights", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		log.Println("Error inserting flight, code:", resp.StatusCode)
-		http.Error(w, "Error inserting flight, code: "+http.StatusText(resp.StatusCode), resp.StatusCode)
-		return
-	}
-
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println("Cannot read response body")
-		http.Error(w, "Cannot read response body", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -114,15 +108,15 @@ func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Bad request: cannot read request body")
-		http.Error(w, "Bad request: cannot read request body", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
 
-	req, err := http.NewRequest(http.MethodPatch, dal_flight_url+"/update", bytes.NewBuffer(body))
+	req, err := http.NewRequest(http.MethodPatch, database_url+"/update", bytes.NewBuffer(body))
 	if err != nil {
 		log.Println("Error creating request")
-		http.Error(w, "Error creating request", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -131,7 +125,7 @@ func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("Error sending request")
-		http.Error(w, "Error sending request to DAL Flights", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
@@ -139,7 +133,7 @@ func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println("Error reading response body")
-		http.Error(w, "Error reading response body", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -156,10 +150,10 @@ func DeleteFlightHandler(w http.ResponseWriter, r *http.Request) {
 
 	id_s := mux.Vars(r)["id"]
 
-	req, err := http.NewRequest(http.MethodDelete, dal_flight_url+"/delete/"+id_s, nil)
+	req, err := http.NewRequest(http.MethodDelete, database_url+"/delete/"+id_s, nil)
 	if err != nil {
 		log.Println("Error creating request")
-		http.Error(w, "Error creating request", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -168,7 +162,7 @@ func DeleteFlightHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("Error sending request")
-		http.Error(w, "Error sending request to DAL Flights", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
@@ -176,7 +170,7 @@ func DeleteFlightHandler(w http.ResponseWriter, r *http.Request) {
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println("Cannot read response body")
-		http.Error(w, "Cannot read response body", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

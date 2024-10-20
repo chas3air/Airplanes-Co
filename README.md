@@ -16,6 +16,7 @@ The service consists of several microservices:
 5. **Flights Catalog**: API providing access to flight data through the DAL layer, available on port **12004**.
 6. **Auth**: API used for system access and authentication, available on port **12005**.
 7. **Flight Management**: API used for managing flights, available on port **12006**.
+8. **Customer MAnagement**: **12007**
 
 ### Databases
 - **PostgreSQL (PSQL)**: Relational database for storing structured data.
