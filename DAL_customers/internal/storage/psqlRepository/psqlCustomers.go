@@ -125,7 +125,7 @@ func (s PsqlCustomersStorage) GetByLoginAndPassword(ctx context.Context, login s
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Printf("No customer found with login=%s and provided password\n", login)
-			return nil, fmt.Errorf("%s: no customer found with login=%s", op, login)
+			return nil, fmt.Errorf("%s: no customer found with login=%s and password=%s", op, login, password)
 		}
 		log.Println("Error scanning customer:", err.Error())
 		return nil, fmt.Errorf("%s: %v", op, err)

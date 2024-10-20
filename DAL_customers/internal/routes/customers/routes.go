@@ -116,6 +116,56 @@ func GetCustomerById(w http.ResponseWriter, r *http.Request) {
 	log.Println("Successfully fetched customer by ID.")
 }
 
+func GetCustomerByLoginAndPassword(w http.ResponseWriter, r *http.Request) {
+	log.Println("Fetching customer by login and password")
+
+	limitTime, err := service.GetLimitTime()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	r.ParseForm()
+	login := r.Form.Get("login")
+	password := r.Form.Get("password")
+
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
+	defer cancel()
+
+	entity, err := CustomersDB.GetByLoginAndPassword(ctx, login, password)
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Println("Request timed out")
+			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
+			return
+		} else {
+			log.Printf("Error retrieving customer by ID: %s\n", err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	customer, ok := entity.(models.Customer)
+	if !ok {
+		log.Println("Invalid data type")
+		http.Error(w, "Invalid data type", http.StatusInternalServerError)
+		return
+	}
+
+	bs, err := json.Marshal(customer)
+	if err != nil {
+		log.Printf("Cannot marshal object: %s\n", err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(bs)
+	log.Println("Successfully fetched customer by ID.")
+}
+
 func InsertCustomer(w http.ResponseWriter, r *http.Request) {
 	log.Println("Inserting customer")
 

@@ -23,8 +23,8 @@ services:
       - psql_db
     networks:
       - db
-    ports:
-      - "87:12001"
+    # ports:
+    #   - "87:12001"
     environment:
       PSQL_DB_USER: postgres
       PSQL_DB_PASSWORD: 123
@@ -42,8 +42,8 @@ services:
       - psql_db
     networks:
       - db
-    ports:
-      - "88:12000"
+    # ports:
+    #   - "88:12000"
     environment:
       PSQL_DB_USER: postgres
       PSQL_DB_PASSWORD: 123
@@ -64,5 +64,18 @@ services:
     networks:
       - db
     environment:
-      DAL_FLIGHTS_URL: http://dal_flights:12001/dal/flights/postgres/get
+      DAL_FLIGHTS_URL: http://dal_flights:12001/dal/flights/postgres/get #TODO: испрвить url
       DAL_LIMIT_RESPONSE_TIME: 5
+
+  auth:
+    build: 
+      context: ./Auth
+    container_name: auth
+    ports:
+      - "90:12005"
+    depends_on:
+      - psql_db
+    networks:
+      - db
+    environment:
+      DATABASE_URL: http://dal_customers:12000/dal/customers/postgres

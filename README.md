@@ -1,41 +1,40 @@
 # Airplanes & Co
 
-Airplanes & Co — это сервис для покупки дешевых авиабилетов, разработанный с использованием современных технологий на языке Go.
+**Airplanes & Co** is a service for purchasing cheap flight tickets, developed using modern technologies in the Go programming language.
 
-## Архитектура
+## Architecture
 
-Сервис состоит микросервисов:
+The service consists of several microservices:
 
-1. **CLI**: интерфейс командной строки для взаимодействия с приложением.
-2. **BLL**: API, представляющее бизнес-логику приложения и взаимодействующее с DAL.
-3. **DAL**:
-   - **Пользователи**: API для работы с данными пользователей, доступный на порту **12000**. 
-   - **Рейсы**: API для управления рейсами, доступный на порту **12001**.
-   - **Билеты**: API для работы с билетами, доступный на порту **12002**. 
-4. **Cart**: API, которое представляет корзину заказов каждого пользователя, запускается на порту **12003**.
-5. **Flights catalog**: API, котрое позволяет получить доступ к данным через прослойку DAL(работа с рейсами), запускается на порту **12004**.
+1. **CLI**: Command-line interface for interacting with the application.
+2. **BLL (Business Logic Layer)**: API representing the business logic of the application, which interacts with the DAL (Data Access Layer).
+3. **DAL (Data Access Layer)**:
+   - **Users**: API for managing user data at a lower level, available on port **12000**.
+   - **Flights**: API for managing flight data at a lower level, available on port **12001**.
+   - **Tickets**: API for handling tickets at a lower level, available on port **12002**.
+4. **Cart**: API representing the order cart for each user, available on port **12003**.
+5. **Flights Catalog**: API providing access to flight data through the DAL layer, available on port **12004**.
+6. **Auth**: API used for system access and authentication, available on port **12005**.
+7. **Flight Management**: API used for managing flights, available on port **12006**.
 
-. **PostgreSQL (PSQL)**: реляционная база данных для хранения данных.
-. **MongoDB**: NoSQL база данных для хранения неструктурированных данных.
-. **Redis**: система кэширования для повышения производительности.
+### Databases
+- **PostgreSQL (PSQL)**: Relational database for storing structured data.
+- **MongoDB**: NoSQL database for storing unstructured data.
+- **Redis**: Caching system to enhance performance.
 
-Все микросервисы запускаются и собираются в Docker-контейнерах с помощью Docker Compose.
+All **microservices** are built and run in Docker containers using Docker Compose.
 
-## Установка
+## Installation
 
-### Предварительные требования
+### Prerequisites
 
 - Docker
 - Docker Compose
 - Git
 
-### Клонирование репозитория
+### Cloning the Repository
+
+To get started, clone the repository:
 
 ```bash
 git clone https://github.com/chas3air/Airplanes-Co.git
-```
-
-```bash
-cd Airplanes-Co
-docker compose up
-```
