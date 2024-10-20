@@ -64,7 +64,7 @@ services:
     networks:
       - db
     environment:
-      DAL_FLIGHTS_URL: http://dal_flights:12001/dal/flights/postgres/get #TODO: испрвить url
+      DATABASE_URL: http://dal_flights:12001/dal/flights/postgres/get #TODO: испрвить url
       DAL_LIMIT_RESPONSE_TIME: 5
 
   auth:

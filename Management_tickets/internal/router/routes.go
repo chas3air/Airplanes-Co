@@ -6,16 +6,16 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/chas3air/Airplanes-Co/Management_flights/internal/config"
+	"github.com/chas3air/Airplanes-Co/Management_tickets/internal/config"
 	"github.com/gorilla/mux"
 )
 
 var database_url = config.DATABASE_URL
 
-// GetAllFlightsHandler handles a GET request to fetch all flights.
-// Returns a list of flights in JSON format.
-func GetAllFlightsHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Fetching all flights")
+// GetAllTicketsHandler handles a GET request to fetch all tickets.
+// It retrieves all tickets from the database and returns them in JSON format.
+func GetAllTicketsHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Fetching all tickets")
 
 	resp, err := http.Get(database_url + "/get")
 	if err != nil {
@@ -35,13 +35,13 @@ func GetAllFlightsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
-	log.Println("Successfully fetched all flights.")
+	log.Println("Successfully fetched all tickets.")
 }
 
-// GetFlightByIdHandler handles a GET request to retrieve a flight by ID.
-// Takes the flight ID from the URL and returns the flight data in JSON format.
-func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Retrieving flight by ID")
+// GetTicketByIdHandler handles a GET request to retrieve a ticket by its ID.
+// It fetches the ticket from the database and returns it in JSON format.
+func GetTicketByIdHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Retrieving ticket by ID")
 
 	id_s := mux.Vars(r)["id"]
 
@@ -63,13 +63,13 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(body)
-	log.Println("Successfully retrieved flight by ID.")
+	log.Println("Successfully retrieved ticket by ID.")
 }
 
-// InsertFlightsHandler handles a POST request to add a new flight.
-// Takes flight data in JSON format and returns confirmation of the insertion.
-func InsertFlightsHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Inserting flight")
+// InsertTicketHandler handles a POST request to add a new ticket.
+// It takes ticket data in JSON format from the request body and inserts it into the database.
+func InsertTicketHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Inserting ticket")
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -97,13 +97,13 @@ func InsertFlightsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(bs)
-	log.Println("Successfully inserted flight.")
+	log.Println("Successfully inserted ticket.")
 }
 
-// UpdateFlightHandler handles a PATCH request to update flight information.
-// Takes flight data in JSON format and returns the updated flight data.
-func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Updating flight")
+// UpdateTicketHandler handles a PATCH request to update ticket information.
+// It takes the updated ticket data in JSON format from the request body.
+func UpdateTicketHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Updating ticket")
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -140,13 +140,13 @@ func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(responseBody)
-	log.Println("Successfully updated flight.")
+	log.Println("Successfully updated ticket.")
 }
 
-// DeleteFlightHandler handles a DELETE request to remove a flight by ID.
-// Takes the flight ID from the URL and returns confirmation of the deletion.
-func DeleteFlightHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Deleting flight")
+// DeleteTicketHandler handles a DELETE request to remove a ticket by its ID.
+// It deletes the specified ticket from the database.
+func DeleteTicketHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Deleting ticket")
 
 	id_s := mux.Vars(r)["id"]
 
@@ -177,5 +177,5 @@ func DeleteFlightHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(responseBody)
-	log.Println("Successfully deleted flight.")
+	log.Println("Successfully deleted ticket.")
 }
