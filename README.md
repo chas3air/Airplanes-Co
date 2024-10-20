@@ -40,3 +40,9 @@ To get started, clone the repository:
 
 ```bash
 git clone https://github.com/chas3air/Airplanes-Co.git
+```
+
+```bash
+cd Airplanes-Co
+docker compose up
+```
