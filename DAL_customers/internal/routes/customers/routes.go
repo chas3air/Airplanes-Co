@@ -15,16 +15,10 @@ import (
 )
 
 var CustomersDB = storage.MustGetInstanceOfCustomersStorage("psql")
+var limitTime = service.GetLimitTime()
 
 func GetCustomers(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching all customers")
-
-	limitTime, err := service.GetLimitTime()
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
@@ -64,13 +58,6 @@ func GetCustomers(w http.ResponseWriter, r *http.Request) {
 
 func GetCustomerById(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching customer by ID")
-
-	limitTime, err := service.GetLimitTime()
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
@@ -119,13 +106,6 @@ func GetCustomerById(w http.ResponseWriter, r *http.Request) {
 func GetCustomerByLoginAndPassword(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching customer by login and password")
 
-	limitTime, err := service.GetLimitTime()
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	r.ParseForm()
 	login := r.Form.Get("login")
 	password := r.Form.Get("password")
@@ -168,13 +148,6 @@ func GetCustomerByLoginAndPassword(w http.ResponseWriter, r *http.Request) {
 
 func InsertCustomer(w http.ResponseWriter, r *http.Request) {
 	log.Println("Inserting customer")
-
-	limitTime, err := service.GetLimitTime()
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
@@ -224,13 +197,6 @@ func InsertCustomer(w http.ResponseWriter, r *http.Request) {
 func UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 	log.Println("Updating customer")
 
-	limitTime, err := service.GetLimitTime()
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
@@ -278,13 +244,6 @@ func UpdateCustomer(w http.ResponseWriter, r *http.Request) {
 
 func DeleteCustomer(w http.ResponseWriter, r *http.Request) {
 	log.Println("Deleting customer")
-
-	limitTime, err := service.GetLimitTime()
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()

@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
-	"github.com/chas3air/Airplanes-Co/DAL_tickets/internal/config"
 	_ "github.com/lib/pq"
 )
 
@@ -23,11 +23,12 @@ func InitDB() *sql.DB {
 	log.Println("Initializing database connection")
 
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		config.PSQL_DB_USER,
-		config.PSQL_DB_PASSWORD,
-		config.PSQL_DB_HOST,
-		config.PSQL_DB_PORT,
-		config.PSQL_DB_DBNAME)
+		os.Getenv("PSQL_DB_USER"),
+		os.Getenv("PSQL_DB_PASSWORD"),
+		os.Getenv("PSQL_DB_HOST"),
+		os.Getenv("PSQL_DB_PORT"),
+		os.Getenv("PSQL_DB_DBNAME"),
+	)
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {

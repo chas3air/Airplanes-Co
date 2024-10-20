@@ -8,8 +8,8 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o dal_tickets ./cmd/app
+RUN go build -o management_flights ./cmd/app
 
 EXPOSE 12002
 
-CMD ["./dal_tickets"]
+CMD ["./management_flights"]

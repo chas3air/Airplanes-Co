@@ -5,12 +5,12 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 
-	"github.com/chas3air/Airplanes-Co/Management_flights/internal/config"
 	"github.com/gorilla/mux"
 )
 
-var database_url = config.DATABASE_URL
+var database_url = os.Getenv("DAL_FLIGHTS_URL")
 
 // GetAllFlightsHandler handles a GET request to fetch all flights.
 // Returns a list of flights in JSON format.

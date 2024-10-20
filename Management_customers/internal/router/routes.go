@@ -6,12 +6,12 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 
-	"github.com/chas3air/Airplanes-Co/Management_customers/internal/config"
 	"github.com/gorilla/mux"
 )
 
-var database_url = config.DATABASE_URL
+var database_url = os.Getenv("DAL_CUSTOMERS_URL")
 
 // GetAllCustomersHandler handles a GET request to fetch all customers.
 // Returns a list of customers in JSON format.

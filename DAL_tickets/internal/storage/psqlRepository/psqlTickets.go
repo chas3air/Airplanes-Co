@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
-	"github.com/chas3air/Airplanes-Co/DAL_tickets/internal/config"
 	"github.com/chas3air/Airplanes-Co/DAL_tickets/internal/models"
 )
 
@@ -41,7 +41,7 @@ func (s PsqlTicketsStorage) GetAll(ctx context.Context) (any, error) {
 	}
 
 	rows, err := s.DB.QueryContext(ctx, `
-		SELECT * FROM `+config.PSQL_TICKETS_TABLE_NAME+`;
+		SELECT * FROM `+os.Getenv("PSQL_TABLE_NAME")+`;
 	`)
 	if err != nil {
 		log.Println("Error querying tickets:", err.Error())
@@ -83,7 +83,7 @@ func (s PsqlTicketsStorage) GetById(ctx context.Context, id int) (any, error) {
 	}
 
 	row := s.DB.QueryRowContext(ctx, `
-		SELECT * FROM `+config.PSQL_TICKETS_TABLE_NAME+`
+		SELECT * FROM `+os.Getenv("PSQL_TABLE_NAME")+`
 		WHERE id = $1;
 	`, id)
 
@@ -119,7 +119,7 @@ func (s PsqlTicketsStorage) Insert(ctx context.Context, innerObj any) (any, erro
 	var id int
 
 	err = s.DB.QueryRowContext(ctx, `
-		INSERT INTO `+config.PSQL_TICKETS_TABLE_NAME+`
+		INSERT INTO `+os.Getenv("PSQL_TABLE_NAME")+`
 		(flightId, ownerId, ticketCost, classOfService)
 		VALUES ($1, $2, $3, $4) RETURNING id
 	`, ticket.FlightId, ticket.OwnerId, ticket.TicketCost, ticket.ClassOfService).Scan(&id)
@@ -147,7 +147,7 @@ func (s PsqlTicketsStorage) Update(ctx context.Context, innerObj any) (any, erro
 	ticket := innerObj.(models.Ticket)
 
 	_, err = s.DB.ExecContext(ctx, `
-		UPDATE `+config.PSQL_TICKETS_TABLE_NAME+`
+		UPDATE `+os.Getenv("PSQL_TABLE_NAME")+`
 		SET flightId = $1, ownerId = $2, ticketCost = $3, classOfService = $4
 		WHERE id = $5;
 	`, ticket.FlightId, ticket.OwnerId, ticket.TicketCost, ticket.ClassOfService, ticket.Id)
@@ -179,7 +179,7 @@ func (s PsqlTicketsStorage) Delete(ctx context.Context, id int) (any, error) {
 	}
 
 	_, err = s.DB.ExecContext(ctx, `
-		DELETE FROM `+config.PSQL_TICKETS_TABLE_NAME+`
+		DELETE FROM `+os.Getenv("PSQL_TABLE_NAME")+`
 		WHERE id = $1;
 	`, id)
 

@@ -2,72 +2,55 @@ package auth
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/chas3air/Airplanes-Co/Auth/internal/models"
 )
 
-// TODO: напеределку
+var env_url = os.Getenv("DAL_CUSTOMERS_URL")
+
+// SignInHandler handles user sign-in requests.
+// It retrieves login and password from the request, and validates them against the customer database.
 func SignInHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Sign in process")
+	log.Println("Initiating sign-in process")
 
-	env_url := os.Getenv("DATABASE_URL")
+	r.ParseForm()
+	login := r.Form.Get("login")
+	password := r.Form.Get("password")
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.Println("Bad request: cannot read request body")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	var pre_cust models.PreCust
-	err = json.Unmarshal(body, &pre_cust)
-	if err != nil {
-		log.Println("Cannot unmarshal request body to models.PreCust")
-		log.Println("Body:", string(body))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	url := fmt.Sprintf(env_url+"/get/lp"+"?login=%s&password=%s", pre_cust.Login, pre_cust.Password)
+	url := fmt.Sprintf("%s/get/lp?login=%s&password=%s", env_url, login, password)
 
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Println("Error:", err.Error())
-		http.Error(w, err.Error(), resp.StatusCode)
+		log.Printf("Error during sign-in: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Cannot read responce body")
+		log.Println("Cannot read response body during sign-in")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(resp.StatusCode)
 	w.Write(bs)
-	log.Println("Successfully sign in.")
+	log.Println("Successfully signed in.")
 }
 
+// SignUpHandler handles user sign-up requests.
+// It reads user data from the request body and inserts it into the customer database.
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Sign up process")
-
-	env_url := os.Getenv("DATABASE_URL")
-
-	// тут рабоатет модель models.Customer
+	log.Println("Initiating sign-up process")
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Println("Bad request: cannot read request body")
+		log.Println("Bad request: cannot read request body during sign-up")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -75,21 +58,21 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := http.Post(env_url+"/insert", "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		log.Println("Error sending request")
+		log.Printf("Error sending request during sign-up: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Println("Error, status:", resp.StatusCode)
-		http.Error(w, fmt.Errorf("error, status: %d", resp.StatusCode).Error(), resp.StatusCode)
+		log.Printf("Sign-up error, status code: %d", resp.StatusCode)
+		http.Error(w, fmt.Sprintf("error, status: %d", resp.StatusCode), resp.StatusCode)
 		return
 	}
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Cannot read response body")
+		log.Println("Cannot read response body during sign-up")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -97,5 +80,5 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(bs)
-	log.Println("Successfully sing up.")
+	log.Println("Successfully signed up.")
 }

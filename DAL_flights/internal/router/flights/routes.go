@@ -15,16 +15,10 @@ import (
 )
 
 var FlightsDB = storage.MustGetInstanceOfFlightsStorage("psql")
+var limitTime = service.GetLimitTime()
 
 func GetFlights(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching all flights")
-
-	limitTime, err := service.GetLimitTime()
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
@@ -64,13 +58,6 @@ func GetFlights(w http.ResponseWriter, r *http.Request) {
 
 func GetFlightById(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching flight by ID")
-
-	limitTime, err := service.GetLimitTime()
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
@@ -118,13 +105,6 @@ func GetFlightById(w http.ResponseWriter, r *http.Request) {
 
 func InsertFlight(w http.ResponseWriter, r *http.Request) {
 	log.Println("Inserting flight")
-
-	limitTime, err := service.GetLimitTime()
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
@@ -174,13 +154,6 @@ func InsertFlight(w http.ResponseWriter, r *http.Request) {
 func UpdateFlight(w http.ResponseWriter, r *http.Request) {
 	log.Println("Updating flight")
 
-	limitTime, err := service.GetLimitTime()
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
@@ -228,13 +201,6 @@ func UpdateFlight(w http.ResponseWriter, r *http.Request) {
 
 func DeleteFlight(w http.ResponseWriter, r *http.Request) {
 	log.Println("Deleting flight")
-
-	limitTime, err := service.GetLimitTime()
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()

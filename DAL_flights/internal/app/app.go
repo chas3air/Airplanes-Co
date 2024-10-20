@@ -3,7 +3,7 @@ package app
 import (
 	"net/http"
 
-	"github.com/chas3air/Airplanes-Co/DAL_flights/internal/routes/flights"
+	"github.com/chas3air/Airplanes-Co/DAL_flights/internal/router/flights"
 	"github.com/gorilla/mux"
 )
 

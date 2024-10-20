@@ -5,12 +5,12 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 
-	"github.com/chas3air/Airplanes-Co/Management_tickets/internal/config"
 	"github.com/gorilla/mux"
 )
 
-var database_url = config.DATABASE_URL
+var database_url = os.Getenv("DAL_TICKETS_URL")
 
 // GetAllTicketsHandler handles a GET request to fetch all tickets.
 // It retrieves all tickets from the database and returns them in JSON format.

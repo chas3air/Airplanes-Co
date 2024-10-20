@@ -1,3 +1,5 @@
 package config
 
-var ()
+var (
+	DEFAULT_LIMIT_TIME = 5
+)

@@ -7,20 +7,20 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
-	"github.com/chas3air/Airplanes-Co/DAL_tickets/internal/config"
 	"github.com/chas3air/Airplanes-Co/DAL_tickets/internal/models"
+	"github.com/chas3air/Airplanes-Co/DAL_tickets/internal/service"
 	"github.com/chas3air/Airplanes-Co/DAL_tickets/internal/storage"
 	"github.com/gorilla/mux"
 )
 
 var TicketsDB = storage.MustGetInstanceOfTicketssStorage("psql")
+var limitTime = service.GetLimitTime()
 
 func GetTickets(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching all tickets")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	entities, err := TicketsDB.GetAll(ctx)
@@ -59,7 +59,7 @@ func GetTickets(w http.ResponseWriter, r *http.Request) {
 func GetTicketById(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching ticket by ID")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	id_s := mux.Vars(r)["id"]
@@ -106,7 +106,7 @@ func GetTicketById(w http.ResponseWriter, r *http.Request) {
 func InsertTicket(w http.ResponseWriter, r *http.Request) {
 	log.Println("Inserting ticket")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	bs, err := io.ReadAll(r.Body)
@@ -154,7 +154,7 @@ func InsertTicket(w http.ResponseWriter, r *http.Request) {
 func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	log.Println("Updating ticket")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	bs, err := io.ReadAll(r.Body)
@@ -202,7 +202,7 @@ func UpdateTicket(w http.ResponseWriter, r *http.Request) {
 func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 	log.Println("Deleting ticket")
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.PSQL_LIMIT_RESPONSE_TIME*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
 	id_s := mux.Vars(r)["id"]
