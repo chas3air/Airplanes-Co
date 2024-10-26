@@ -28,8 +28,8 @@ services:
       - psql_db
     networks:
       - db
-    ports:
-      - "74:12001"
+    # ports:
+    #   - "74:12001"
     environment:
       PSQL_DB_USER: postgres
       PSQL_DB_PASSWORD: 123
@@ -47,8 +47,8 @@ services:
       - psql_db
     networks:
       - db
-    ports:
-      - "75:12000"
+    # ports:
+    #   - "75:12000"
     environment:
       PSQL_DB_USER: postgres
       PSQL_DB_PASSWORD: 123
@@ -67,8 +67,8 @@ services:
       - psql_db
     networks:
       - db
-    ports:
-      - "76:12002"
+    # ports:
+    #   - "76:12002"
     environment:
       PSQL_DB_USER: postgres
       PSQL_DB_PASSWORD: 123
@@ -78,58 +78,55 @@ services:
       PSQL_TABLE_NAME: Tickets
       PSQL_LIMIT_RESPONSE_TIME: 10
 
-  # management_customers:
-  #   build:
-  #     context: ./Management_customers
-  #   container_name: management_customers
-  #   depends_on:
-  #     - psql_db
-  #   networks:
-  #     - db
-  #   ports:
-  #     - "77:12007"
-  #   environment:
-  #     DAL_CUSTOMERS_URL: http://dal_customers:12000/dal/customers/postgres
+  management_customers:
+    build:
+      context: ./Management_customers
+    container_name: management_customers
+    networks:
+      - db
+    ports:
+      - "77:12007"
+    environment:
+      DAL_CUSTOMERS_URL: http://dal_customers:12000/postgres/customers
+      LIMIT_RESPONSE_TIME: 10
 
-  # management_flights:
-  #   build:
-  #     context: ./Management_flights
-  #   container_name: management_flights
-  #   depends_on:
-  #     - psql_db
-  #   networks:
-  #     - db
-  #   ports:
-  #     - "78:12006"
-  #   environment:
-  #     DAL_FLIGHTS_URL: http://dal_flights:12001/dal/flights/postgres
+  management_flights:
+    build:
+      context: ./Management_flights
+    container_name: management_flights
+    networks:
+      - db
+    ports:
+      - "78:12006"
+    environment:
+      DAL_FLIGHTS_URL: http://dal_flights:12001/postgres/flights
+      LIMIT_RESPONSE_TIME: 10
 
-  # management_tickets:
-  #   build:
-  #     context: ./Management_tickets
-  #   container_name: management_tickets
-  #   depends_on:
-  #     - psql_db
-  #   networks:
-  #     - db
-  #   ports:
-  #     - "79:12008"
-  #   environment:
-  #     DAL_TICKETS_URL: http://dal_tickets:12002/dal/tickets/postgres
+  management_tickets:
+    build:
+      context: ./Management_tickets
+    container_name: management_tickets
+    networks:
+      - db
+    ports:
+      - "79:12008"
+    environment:
+      DAL_TICKETS_URL: http://dal_tickets:12002/postgres/tickets
+      LIMIT_RESPONSE_TIME: 10
 
-  # catalog:
-  #   build:
-  #     context: ./Flights_catalog
-  #   container_name: catalog
-  #   ports:
-  #     - "76:12004"
-  #   depends_on:
-  #     - psql_db
-  #   networks:
-  #     - db
-  #   environment:
-  #     DAL_FLIGHTS_URL: http://dal_flights:12001/dal/flights/postgres
-  #     DAL_LIMIT_RESPONSE_TIME: 5
+  catalog:
+    build:
+      context: ./Flights_catalog
+    container_name: catalog
+    ports:
+      - "80:12004"
+    depends_on:
+      - psql_db
+    networks:
+      - db
+    environment:
+      DAL_FLIGHTS_URL: http://dal_flights:12001/postgres/flights
+      LIMIT_RESPONSE_TIME: 5
 
   # auth:
   #   build: 

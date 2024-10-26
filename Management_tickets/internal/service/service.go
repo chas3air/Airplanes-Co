@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/chas3air/Airplanes-Co/Flights_catalog/internal/config"
+	"github.com/chas3air/Airplanes-Co/Management_tickets/internal/config"
 )
 
 func GetLimitTime() time.Duration {

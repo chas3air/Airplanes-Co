@@ -1,5 +1,3 @@
 package config
 
-const (
-	
-)
+const DEFAULT_LIMIT_TIME = 10

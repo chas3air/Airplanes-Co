@@ -7,17 +7,24 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/chas3air/Airplanes-Co/Management_flights/internal/service"
 	"github.com/gorilla/mux"
 )
 
 var database_url = os.Getenv("DAL_FLIGHTS_URL")
+var limitTime = service.GetLimitTime()
 
-// GetAllFlightsHandler handles a GET request to fetch all flights.
-// Returns a list of flights in JSON format.
-func GetAllFlightsHandler(w http.ResponseWriter, r *http.Request) {
+var httpClient = &http.Client{
+	Timeout: limitTime,
+}
+
+// GetFlightsHandler handles a GET request to fetch all flights.
+// It retrieves all flight data from the database and returns it in JSON format.
+// If an error occurs during the process, it responds with an appropriate HTTP status code.
+func GetFlightsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching all flights")
 
-	resp, err := http.Get(database_url + "/get")
+	resp, err := httpClient.Get(database_url)
 	if err != nil {
 		log.Println("Cannot send request to", database_url)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -39,13 +46,14 @@ func GetAllFlightsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetFlightByIdHandler handles a GET request to retrieve a flight by ID.
-// Takes the flight ID from the URL and returns the flight data in JSON format.
+// It takes the flight ID from the URL and returns the flight data in JSON format.
+// If the flight is not found or an error occurs, it responds with an appropriate HTTP status code.
 func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Retrieving flight by ID")
 
 	id_s := mux.Vars(r)["id"]
 
-	resp, err := http.Get(database_url + "/get/" + id_s)
+	resp, err := httpClient.Get(database_url + "/" + id_s)
 	if err != nil {
 		log.Println("Cannot send request to", database_url)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -67,7 +75,8 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // InsertFlightsHandler handles a POST request to add a new flight.
-// Takes flight data in JSON format and returns confirmation of the insertion.
+// It expects flight data in JSON format in the request body.
+// If successful, it responds with the inserted flight data; otherwise, it responds with an error.
 func InsertFlightsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Inserting flight")
 
@@ -79,7 +88,7 @@ func InsertFlightsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	resp, err := http.Post(database_url+"/insert", "application/json", bytes.NewBuffer(body))
+	resp, err := httpClient.Post(database_url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		log.Println("Error sending request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -101,7 +110,8 @@ func InsertFlightsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateFlightHandler handles a PATCH request to update flight information.
-// Takes flight data in JSON format and returns the updated flight data.
+// It expects the updated flight data in JSON format in the request body.
+// If successful, it responds with the updated flight data; otherwise, it responds with an error.
 func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Updating flight")
 
@@ -113,7 +123,7 @@ func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	req, err := http.NewRequest(http.MethodPatch, database_url+"/update", bytes.NewBuffer(body))
+	req, err := http.NewRequest(http.MethodPatch, database_url, bytes.NewBuffer(body))
 	if err != nil {
 		log.Println("Error creating request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -121,8 +131,7 @@ func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Println("Error sending request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -144,13 +153,14 @@ func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteFlightHandler handles a DELETE request to remove a flight by ID.
-// Takes the flight ID from the URL and returns confirmation of the deletion.
+// It takes the flight ID from the URL and responds with confirmation of the deletion.
+// If an error occurs, it responds with an appropriate HTTP status code.
 func DeleteFlightHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Deleting flight")
 
 	id_s := mux.Vars(r)["id"]
 
-	req, err := http.NewRequest(http.MethodDelete, database_url+"/delete/"+id_s, nil)
+	req, err := http.NewRequest(http.MethodDelete, database_url+"/"+id_s, nil)
 	if err != nil {
 		log.Println("Error creating request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -158,8 +168,7 @@ func DeleteFlightHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Println("Error sending request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)

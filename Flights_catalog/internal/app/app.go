@@ -10,11 +10,11 @@ import (
 func Run() {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/api/catalog/flights", catalog.GetFlightsHandler).Methods(http.MethodGet)
-	router.HandleFunc("/api/catalog/flights/{id:[0-9]+}", catalog.GetFlightByIDHandler).Methods(http.MethodGet)
-	router.HandleFunc("/api/catalog/flights/search", catalog.SearchFlightsHandler).Methods(http.MethodGet)
+	router.HandleFunc("/catalog/flights", catalog.GetFlightsHandler).Methods(http.MethodGet)
+	router.HandleFunc("/catalog/flights/{id}", catalog.GetFlightByIDHandler).Methods(http.MethodGet)
+	router.HandleFunc("/catalog/flights/search", catalog.SearchFlightsHandler).Methods(http.MethodGet)
 
-	router.HandleFunc("/api/catalog/flights/stats", catalog.StatsFlightsHandler).Methods(http.MethodGet)
+	router.HandleFunc("/catalog/flights/stats", catalog.StatsFlightsHandler).Methods(http.MethodGet)
 
 	http.ListenAndServe(":12004", router)
 }
