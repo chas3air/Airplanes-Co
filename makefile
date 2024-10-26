@@ -6,3 +6,8 @@ up:
 
 down:
 	@docker compose down
+
+refresh:
+	@docker compose down
+	@docker compose build
+	@docker compose up

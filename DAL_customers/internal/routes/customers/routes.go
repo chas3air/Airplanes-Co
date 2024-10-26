@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/chas3air/Airplanes-Co/DAL_customers/internal/models"
 	"github.com/chas3air/Airplanes-Co/DAL_customers/internal/service"
@@ -62,13 +61,7 @@ func GetCustomerById(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
-	id_s := mux.Vars(r)["id"]
-	id, err := strconv.Atoi(id_s)
-	if err != nil {
-		log.Printf("Bad request: invalid ID: %s", id_s)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	id := mux.Vars(r)["id"]
 
 	entity, err := CustomersDB.GetById(ctx, id)
 	if err != nil {
@@ -248,13 +241,7 @@ func DeleteCustomer(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
-	id_s := mux.Vars(r)["id"]
-	id, err := strconv.Atoi(id_s)
-	if err != nil {
-		log.Println("Bad request: wrong customer ID")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	id := mux.Vars(r)["id"]
 
 	obj, err := CustomersDB.Delete(ctx, id)
 	if err != nil {
@@ -263,7 +250,7 @@ func DeleteCustomer(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
 			return
 		} else {
-			log.Printf("Error deleting customer with ID %d: %s", id, err.Error())
+			log.Printf("Error deleting customer with ID %v: %s", id, err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -279,5 +266,5 @@ func DeleteCustomer(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(out_bs)
-	log.Printf("Successfully deleted customer with ID: %d", id)
+	log.Printf("Successfully deleted customer with ID: %v", id)
 }

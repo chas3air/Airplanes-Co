@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/chas3air/Airplanes-Co/DAL_tickets/internal/models"
+	"github.com/google/uuid"
 )
 
 type PsqlTicketsStorage struct {
@@ -73,7 +74,7 @@ func (s PsqlTicketsStorage) GetAll(ctx context.Context) (any, error) {
 
 // GetById retrieves a ticket by its ID.
 // It returns the Ticket model and an error if no ticket is found or if an error occurs.
-func (s PsqlTicketsStorage) GetById(ctx context.Context, id int) (any, error) {
+func (s PsqlTicketsStorage) GetById(ctx context.Context, id any) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlTickets.GetById"
 
 	err := s.DB.Ping()
@@ -93,14 +94,14 @@ func (s PsqlTicketsStorage) GetById(ctx context.Context, id int) (any, error) {
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Printf("No ticket found with ID=%d\n", id)
+			log.Printf("No ticket found with ID=%s\n", id)
 			return nil, fmt.Errorf("%s: no ticket found with ID=%d", op, id)
 		}
 		log.Println("Error scanning ticket:", err.Error())
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
-	log.Printf("Retrieved ticket with ID=%d\n", ticket.Id)
+	log.Printf("Retrieved ticket with ID=%v\n", ticket.Id)
 	return ticket, nil
 }
 
@@ -116,7 +117,7 @@ func (s PsqlTicketsStorage) Insert(ctx context.Context, innerObj any) (any, erro
 	}
 
 	ticket := innerObj.(models.Ticket)
-	var id int
+	var id uuid.UUID
 
 	err = s.DB.QueryRowContext(ctx, `
 		INSERT INTO `+os.Getenv("PSQL_TABLE_NAME")+`
@@ -130,7 +131,8 @@ func (s PsqlTicketsStorage) Insert(ctx context.Context, innerObj any) (any, erro
 	}
 
 	log.Printf("Inserted ticket with ID=%d\n", id)
-	return s.GetById(ctx, id)
+	ticket.Id = id
+	return ticket, nil
 }
 
 // Update modifies an existing ticket in the database.
@@ -158,12 +160,12 @@ func (s PsqlTicketsStorage) Update(ctx context.Context, innerObj any) (any, erro
 	}
 
 	log.Printf("Updated ticket with ID=%d\n", ticket.Id)
-	return s.GetById(ctx, ticket.Id)
+	return ticket, nil
 }
 
 // Delete removes a ticket from the database by its ID.
 // It returns the deleted Ticket model and an error if the deletion fails.
-func (s PsqlTicketsStorage) Delete(ctx context.Context, id int) (any, error) {
+func (s PsqlTicketsStorage) Delete(ctx context.Context, id any) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlTickets.Delete"
 
 	err := s.DB.Ping()
@@ -188,6 +190,6 @@ func (s PsqlTicketsStorage) Delete(ctx context.Context, id int) (any, error) {
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
-	log.Printf("Deleted ticket with ID=%d\n", id)
+	log.Printf("Deleted ticket with ID=%s\n", id)
 	return ticket, nil
 }

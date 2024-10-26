@@ -3,16 +3,16 @@ CREATE DATABASE airplanesco;
 \c airplanesco
 
 CREATE TABLE IF NOT EXISTS Customers (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     login VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    role VARCHAR(50),
-    surname VARCHAR(100),
-    name VARCHAR(100)
+    role VARCHAR(50) NOT NULL,
+    surname VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS Flights (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     fromWhere VARCHAR(50) NOT NULL,
     destination VARCHAR(50) NOT NULL,
     flightTime TIMESTAMP NOT NULL,
@@ -20,17 +20,9 @@ CREATE TABLE IF NOT EXISTS Flights (
 );
 
 CREATE TABLE IF NOT EXISTS Tickets (
-    id SERIAL PRIMARY KEY,
-    flightId INT NOT NULL,
-    ownerId INT NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    flightId UUID NOT NULL,
+    ownerId UUID NOT NULL,
     ticketCost NUMERIC(10, 2) NOT NULL,
-    classOfService VARCHAR(50) NOT NULL,
-    CONSTRAINT fk_flight
-        FOREIGN KEY (flightId) 
-        REFERENCES Flights(id)
-        ON DELETE CASCADE,
-    CONSTRAINT fk_owner
-        FOREIGN KEY (ownerId) 
-        REFERENCES Customers(id)
-        ON DELETE CASCADE
+    classOfService VARCHAR(50) NOT NULL
 );

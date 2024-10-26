@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/chas3air/Airplanes-Co/DAL_tickets/internal/models"
 	"github.com/chas3air/Airplanes-Co/DAL_tickets/internal/service"
@@ -62,13 +61,7 @@ func GetTicketById(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
-	id_s := mux.Vars(r)["id"]
-	id, err := strconv.Atoi(id_s)
-	if err != nil {
-		log.Println("Bad request: invalid ID:", id_s)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	id := mux.Vars(r)["id"]
 
 	entity, err := TicketsDB.GetById(ctx, id)
 	if err != nil {
@@ -205,13 +198,7 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
-	id_s := mux.Vars(r)["id"]
-	id, err := strconv.Atoi(id_s)
-	if err != nil {
-		log.Println("Bad request: wrong ticket ID")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	id := mux.Vars(r)["id"]
 
 	obj, err := TicketsDB.Delete(ctx, id)
 	if err != nil {
@@ -236,5 +223,5 @@ func DeleteTicket(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(out_bs)
-	log.Printf("Successfully deleted ticket with ID: %d", id)
+	log.Printf("Successfully deleted ticket with ID: %v", id)
 }

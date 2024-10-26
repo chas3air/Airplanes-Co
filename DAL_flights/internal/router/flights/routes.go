@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/chas3air/Airplanes-Co/DAL_flights/internal/models"
 	"github.com/chas3air/Airplanes-Co/DAL_flights/internal/service"
@@ -62,13 +61,7 @@ func GetFlightById(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
-	id_s := mux.Vars(r)["id"]
-	id, err := strconv.Atoi(id_s)
-	if err != nil {
-		log.Printf("Bad request: invalid ID: %s\n", id_s)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	id := mux.Vars(r)["id"]
 
 	entity, err := FlightsDB.GetById(ctx, id)
 	if err != nil {
@@ -205,13 +198,7 @@ func DeleteFlight(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), limitTime)
 	defer cancel()
 
-	id_s := mux.Vars(r)["id"]
-	id, err := strconv.Atoi(id_s)
-	if err != nil {
-		log.Println("Bad request: wrong flight ID")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	id := mux.Vars(r)["id"]
 
 	obj, err := FlightsDB.Delete(ctx, id)
 	if err != nil {
@@ -236,5 +223,5 @@ func DeleteFlight(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(out_bs)
-	log.Printf("Successfully deleted flight with ID: %d", id)
+	log.Printf("Successfully deleted flight with ID: %s", id)
 }

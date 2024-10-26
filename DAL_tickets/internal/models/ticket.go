@@ -2,14 +2,16 @@ package models
 
 import (
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 type Ticket struct {
-	Id             int     `json:"id" bson:"id"`
-	FlightId       int     `json:"flightId" bson:"flightId"`
-	OwnerId        int     `json:"ownerId" bson:"ownerId"`
-	TicketCost     float64 `json:"ticketCost" bson:"ticketCost"`
-	ClassOfService string  `json:"classOfService" bson:"classOfService"`
+	Id             uuid.UUID `json:"id" bson:"id"`
+	FlightId       uuid.UUID `json:"flightId" bson:"flightId"`
+	OwnerId        uuid.UUID `json:"ownerId" bson:"ownerId"`
+	TicketCost     float64   `json:"ticketCost" bson:"ticketCost"`
+	ClassOfService string    `json:"classOfService" bson:"classOfService"`
 }
 
 func (t Ticket) String() string {

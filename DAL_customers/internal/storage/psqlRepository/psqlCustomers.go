@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/chas3air/Airplanes-Co/DAL_customers/internal/models"
+	"github.com/google/uuid"
 )
 
 type PsqlCustomersStorage struct {
@@ -71,7 +72,7 @@ func (s PsqlCustomersStorage) GetAll(ctx context.Context) (any, error) {
 
 // GetById retrieves a customer by its ID.
 // It returns the Customer model and an error if no customer is found or if an error occurs.
-func (s PsqlCustomersStorage) GetById(ctx context.Context, id int) (any, error) {
+func (s PsqlCustomersStorage) GetById(ctx context.Context, id any) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlCustomers.GetById"
 
 	err := s.DB.Ping()
@@ -91,8 +92,8 @@ func (s PsqlCustomersStorage) GetById(ctx context.Context, id int) (any, error) 
 		&customer.Password, &customer.Role, &customer.Surname, &customer.Name)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Printf("No customer found with ID=%d\n", id)
-			return nil, fmt.Errorf("%s: no customer found with ID=%d", op, id)
+			log.Printf("No customer found with ID=%v\n", id)
+			return nil, fmt.Errorf("%s: no customer found with ID=%v", op, id)
 		}
 		log.Println("Error scanning customer:", err.Error())
 		return nil, fmt.Errorf("%s: %v", op, err)
@@ -147,7 +148,7 @@ func (s PsqlCustomersStorage) Insert(ctx context.Context, innerObj any) (any, er
 	}
 
 	customer := innerObj.(models.Customer)
-	var id int
+	var id uuid.UUID
 
 	err = s.DB.QueryRowContext(ctx,
 		`INSERT INTO `+os.Getenv("PSQL_TABLE_NAME")+`
@@ -158,7 +159,7 @@ func (s PsqlCustomersStorage) Insert(ctx context.Context, innerObj any) (any, er
 		log.Println("Error inserting customer:", err.Error())
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
-	log.Printf("Inserted customer with ID=%d\n", id)
+	log.Printf("Inserted customer with ID=%s\n", id)
 	return s.GetById(ctx, id)
 }
 
@@ -192,7 +193,7 @@ func (s PsqlCustomersStorage) Update(ctx context.Context, innerObj any) (any, er
 
 // Delete removes a customer from the database by its ID.
 // It returns the deleted Customer model and an error if the deletion fails.
-func (s PsqlCustomersStorage) Delete(ctx context.Context, id int) (any, error) {
+func (s PsqlCustomersStorage) Delete(ctx context.Context, id any) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlCustomers.Delete"
 
 	err := s.DB.Ping()

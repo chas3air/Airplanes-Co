@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/chas3air/Airplanes-Co/DAL_flights/internal/models"
+	"github.com/google/uuid"
 )
 
 type PsqlFlightsStorage struct {
@@ -63,7 +64,7 @@ func (s PsqlFlightsStorage) GetAll(ctx context.Context) (any, error) {
 
 // GetById retrieves a flight by its ID.
 // It returns the Flight model and an error if no flight is found or if an error occurs.
-func (s PsqlFlightsStorage) GetById(ctx context.Context, id int) (any, error) {
+func (s PsqlFlightsStorage) GetById(ctx context.Context, id any) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlFlights.GetById"
 	row := s.DB.QueryRowContext(ctx, `
 		SELECT * FROM `+os.Getenv("PSQL_TABLE_NAME")+`
@@ -74,8 +75,8 @@ func (s PsqlFlightsStorage) GetById(ctx context.Context, id int) (any, error) {
 	err := row.Scan(&flight.Id, &flight.FromWhere, &flight.Destination, &flight.FlightTime, &flight.FlightDuration)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			log.Printf("No flight found with ID=%d\n", id)
-			return nil, fmt.Errorf("%s: no flight found with ID=%d", op, id)
+			log.Printf("No flight found with ID=%v\n", id)
+			return nil, fmt.Errorf("%s: no flight found with ID=%v", op, id)
 		}
 		log.Println("Error scanning flight:", err.Error())
 		return nil, fmt.Errorf("%s: %v", op, err)
@@ -90,7 +91,7 @@ func (s PsqlFlightsStorage) GetById(ctx context.Context, id int) (any, error) {
 func (s PsqlFlightsStorage) Insert(ctx context.Context, innerObj any) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlFlights.Insert"
 	flight := innerObj.(models.Flight)
-	var id int
+	var id uuid.UUID
 
 	err := s.DB.QueryRowContext(ctx, `
 		INSERT INTO `+os.Getenv("PSQL_TABLE_NAME")+`
@@ -102,8 +103,10 @@ func (s PsqlFlightsStorage) Insert(ctx context.Context, innerObj any) (any, erro
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
+	flight.Id = id
+
 	log.Printf("Inserted flight with ID=%d\n", id)
-	return s.GetById(ctx, id)
+	return flight, nil
 }
 
 // Update modifies an existing flight in the database.
@@ -124,12 +127,12 @@ func (s PsqlFlightsStorage) Update(ctx context.Context, innerObj any) (any, erro
 	}
 
 	log.Printf("Updated flight with ID=%d\n", flight.Id)
-	return s.GetById(ctx, flight.Id)
+	return flight, nil
 }
 
 // Delete removes a flight from the database by its ID.
 // It returns the deleted Flight model and an error if the deletion fails.
-func (s PsqlFlightsStorage) Delete(ctx context.Context, id int) (any, error) {
+func (s PsqlFlightsStorage) Delete(ctx context.Context, id any) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlFlights.Delete"
 
 	flight, err := s.GetById(ctx, id)

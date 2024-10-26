@@ -10,12 +10,12 @@ import (
 func Run() {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/dal/customers/postgres/get", customers.GetCustomers).Methods(http.MethodGet)
-	router.HandleFunc("/dal/customers/postgres/get/{id:[0-9]+}", customers.GetCustomerById).Methods(http.MethodGet)
-	router.HandleFunc("/dal/customers/postgres/get/lp", customers.GetCustomerByLoginAndPassword).Methods(http.MethodGet)
-	router.HandleFunc("/dal/customers/postgres/insert", customers.InsertCustomer).Methods(http.MethodPost)
-	router.HandleFunc("/dal/customers/postgres/update", customers.UpdateCustomer).Methods(http.MethodPatch)
-	router.HandleFunc("/dal/customers/postgres/delete/{id:[0-9]+}", customers.DeleteCustomer).Methods(http.MethodDelete)
+	router.HandleFunc("/postgres/customers", customers.GetCustomers).Methods(http.MethodGet)
+	router.HandleFunc("/postgres/customers/{id}", customers.GetCustomerById).Methods(http.MethodGet)
+	router.HandleFunc("/postgres/customers/login", customers.GetCustomerByLoginAndPassword).Methods(http.MethodGet)
+	router.HandleFunc("/postgres/customers", customers.InsertCustomer).Methods(http.MethodPost)
+	router.HandleFunc("/postgres/customers", customers.UpdateCustomer).Methods(http.MethodPatch)
+	router.HandleFunc("/postgres/customers/{id}", customers.DeleteCustomer).Methods(http.MethodDelete)
 
 	http.ListenAndServe(":12000", router)
 }
