@@ -3,18 +3,18 @@ package app
 import (
 	"net/http"
 
-	"github.com/chas3air/Airplanes-Co/Flights_catalog/internal/router/catalog"
+	"github.com/chas3air/Airplanes-Co/Flights_catalog/internal/router"
 	"github.com/gorilla/mux"
 )
 
 func Run() {
-	router := mux.NewRouter()
+	r := mux.NewRouter()
 
-	router.HandleFunc("/catalog/flights", catalog.GetFlightsHandler).Methods(http.MethodGet)
-	router.HandleFunc("/catalog/flights/{id}", catalog.GetFlightByIDHandler).Methods(http.MethodGet)
-	router.HandleFunc("/catalog/flights/search", catalog.SearchFlightsHandler).Methods(http.MethodGet)
+	r.HandleFunc("/catalog/flights", router.GetFlightsHandler).Methods(http.MethodGet)
+	r.HandleFunc("/catalog/flights/{id}", router.GetFlightByIDHandler).Methods(http.MethodGet)
+	r.HandleFunc("/catalog/flights/search", router.SearchFlightsHandler).Methods(http.MethodGet)
 
-	router.HandleFunc("/catalog/flights/stats", catalog.StatsFlightsHandler).Methods(http.MethodGet)
+	r.HandleFunc("/catalog/flights/stats", router.StatsFlightsHandler).Methods(http.MethodGet)
 
-	http.ListenAndServe(":12004", router)
+	http.ListenAndServe(":12004", r)
 }

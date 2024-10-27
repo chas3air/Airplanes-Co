@@ -3,18 +3,18 @@ package app
 import (
 	"net/http"
 
-	"github.com/chas3air/Airplanes-Co/Cart/internal/router/cart"
+	"github.com/chas3air/Airplanes-Co/Cart/internal/router"
 	"github.com/gorilla/mux"
 )
 
 func Run() {
-	router := mux.NewRouter()
+	r := mux.NewRouter()
 
-	router.HandleFunc("/api/get", cart.GetAllTicketsHandler).Methods(http.MethodGet)
-	router.HandleFunc("/api/insert", cart.InsertTicketHandler).Methods(http.MethodPost)
-	router.HandleFunc("/api/update", cart.UpdateTicketHandler).Methods(http.MethodPatch)
-	router.HandleFunc("/api/delete/{id:[0-9]+}", cart.DeleteTicketHandler).Methods(http.MethodDelete)
-	router.HandleFunc("/api/clear", cart.ClearHandler).Methods(http.MethodDelete)
+	r.HandleFunc("/cart", router.GetTicketsHandler).Methods(http.MethodGet)
+	r.HandleFunc("/cart", router.InsertTicketHandler).Methods(http.MethodPost)
+	r.HandleFunc("/cart", router.UpdateTicketHandler).Methods(http.MethodPatch)
+	r.HandleFunc("/cart/{id}", router.DeleteTicketHandler).Methods(http.MethodDelete)
+	r.HandleFunc("/cart/clear", router.ClearHandler).Methods(http.MethodDelete)
 
-	http.ListenAndServe(":12003", router)
+	http.ListenAndServe(":12003", r)
 }

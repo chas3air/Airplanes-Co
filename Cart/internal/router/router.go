@@ -1,11 +1,10 @@
-package cart
+package router
 
 import (
 	"encoding/json"
 	"io"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/chas3air/Airplanes-Co/Cart/internal/models"
 	"github.com/gorilla/mux"
@@ -15,7 +14,7 @@ var TicketsCart = make([]models.Ticket, 0, 10)
 
 // GetAllTicketsHandler handles GET requests to fetch all tickets in the cart.
 // It returns the tickets as a JSON array.
-func GetAllTicketsHandler(w http.ResponseWriter, r *http.Request) {
+func GetTicketsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching tickets from cart")
 
 	bs, err := json.Marshal(TicketsCart)
@@ -81,18 +80,26 @@ func UpdateTicketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update existing ticket in the cart
+	var isExist bool = false
 	for i, v := range TicketsCart {
 		if v.Id == ticket.Id {
+			isExist = true
 			TicketsCart[i] = ticket
 			break
 		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(body)
-	log.Println("Successfully updated ticket.")
+
+	if !isExist {
+		w.WriteHeader(http.StatusNoContent)
+		log.Println("Ticket not found.")
+	} else {
+		w.WriteHeader(http.StatusOK)
+		w.Write(body)
+		log.Println("Successfully updated ticket.")
+	}
+
 }
 
 // DeleteTicketHandler handles DELETE requests to remove a ticket from the cart by its ID.
@@ -100,35 +107,58 @@ func UpdateTicketHandler(w http.ResponseWriter, r *http.Request) {
 func DeleteTicketHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Deleting ticket from cart")
 
-	id_s, ok := mux.Vars(r)["id"]
+	id, ok := mux.Vars(r)["id"]
 	if !ok {
-		log.Println("Bad request: cannot get id from URL")
+		log.Printf("Bad request: cannot get id from URL, id: %v\n", id)
 		http.Error(w, "Bad request: cannot get id from URL", http.StatusBadRequest)
-		return
-	}
-
-	id, err := strconv.Atoi(id_s)
-	if err != nil {
-		log.Println("Bad request: invalid ticket ID:", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	var deletedTicket models.Ticket
 	var newCart []models.Ticket
+	found := false
+
 	for _, v := range TicketsCart {
-		if v.Id != id {
+		if v.Id.String() != id {
 			newCart = append(newCart, v)
 		} else {
 			deletedTicket = v
+			found = true
 		}
 	}
 
-	TicketsCart = newCart
+	if found {
+		TicketsCart = newCart
 
-	bs, err := json.Marshal(deletedTicket)
+		bs, err := json.Marshal(deletedTicket)
+		if err != nil {
+			log.Println("Error marshaling deleted ticket:", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(bs)
+		log.Println("Successfully deleted ticket.")
+	} else {
+		log.Println("Ticket not found:", id)
+		http.Error(w, "Ticket not found", http.StatusNotFound)
+	}
+}
+
+// ClearHandler handles requests to clear all tickets from the cart.
+// It resets the cart to an empty state and returns all tickets that were in the cart.
+func ClearHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Clearing cart")
+
+	ticketsToReturn := TicketsCart
+
+	TicketsCart = TicketsCart[:0]
+
+	bs, err := json.Marshal(ticketsToReturn)
 	if err != nil {
-		log.Println("Error marshaling deleted ticket:", err)
+		log.Println("Cannot marshal tickets for response:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -136,17 +166,5 @@ func DeleteTicketHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(bs)
-	log.Println("Successfully deleted ticket.")
-}
-
-// ClearHandler handles requests to clear all tickets from the cart.
-// It resets the cart to an empty state.
-func ClearHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Clearing cart")
-
-	TicketsCart = make([]models.Ticket, 0, 10)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	log.Println("Successfully cleared cart.")
+	log.Println("Successfully cleared cart and returned tickets.")
 }

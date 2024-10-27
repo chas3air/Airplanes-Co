@@ -3,15 +3,15 @@ package app
 import (
 	"net/http"
 
-	"github.com/chas3air/Airplanes-Co/Auth/internal/routes/auth"
+	"github.com/chas3air/Airplanes-Co/Auth/internal/router"
 	"github.com/gorilla/mux"
 )
 
 func Run() {
-	router := mux.NewRouter()
+	r := mux.NewRouter()
 
-	router.HandleFunc("/api/auth/singin", auth.SignInHandler).Methods(http.MethodGet)
-	router.HandleFunc("/api/auth/singup", auth.SignUpHandler).Methods(http.MethodPost)
+	r.HandleFunc("/auth/singin", router.SignInHandler).Methods(http.MethodGet)
+	r.HandleFunc("/auth/singup", router.SignUpHandler).Methods(http.MethodPost)
 
-	http.ListenAndServe(":12005", router)
+	http.ListenAndServe(":12005", r)
 }

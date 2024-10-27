@@ -7,11 +7,13 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//TODO: изменить энд поинты
+
 func Run() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/postgres/customers", customers.GetCustomers).Methods(http.MethodGet)
-	router.HandleFunc("/postgres/customers/{id}", customers.GetCustomerById).Methods(http.MethodGet)
+	router.HandleFunc("/postgres/customers/{id}/", customers.GetCustomerById).Methods(http.MethodGet)
 	router.HandleFunc("/postgres/customers/login", customers.GetCustomerByLoginAndPassword).Methods(http.MethodGet)
 	router.HandleFunc("/postgres/customers", customers.InsertCustomer).Methods(http.MethodPost)
 	router.HandleFunc("/postgres/customers", customers.UpdateCustomer).Methods(http.MethodPatch)

@@ -1,4 +1,4 @@
-module github.com/chas3air/Airplanes-Co/Cart
+module github.com/chas3air/Airplanes-Co/OrderTicket
 
 go 1.22.3
 

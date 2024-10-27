@@ -20,25 +20,6 @@ services:
     volumes:
       - common_psql_ma:/var/lib/postgresql/data
 
-  dal_flights:
-    build:
-      context: ./Dal_flights
-    container_name: dal_flights
-    depends_on:
-      - psql_db
-    networks:
-      - db
-    # ports:
-    #   - "74:12001"
-    environment:
-      PSQL_DB_USER: postgres
-      PSQL_DB_PASSWORD: 123
-      PSQL_DB_HOST: psql_cont
-      PSQL_DB_PORT: 5432
-      PSQL_DB_DBNAME: airplanesco
-      PSQL_TABLE_NAME: Flights
-      PSQL_LIMIT_RESPONSE_TIME: 10
-
   dal_customers:
     build:
       context: ./Dal_customers
@@ -58,6 +39,24 @@ services:
       PSQL_TABLE_NAME: Customers
       PSQL_LIMIT_RESPONSE_TIME: 10
 
+  dal_flights:
+    build:
+      context: ./Dal_flights
+    container_name: dal_flights
+    depends_on:
+      - psql_db
+    networks:
+      - db
+    # ports:
+    #   - "74:12001"
+    environment:
+      PSQL_DB_USER: postgres
+      PSQL_DB_PASSWORD: 123
+      PSQL_DB_HOST: psql_cont
+      PSQL_DB_PORT: 5432
+      PSQL_DB_DBNAME: airplanesco
+      PSQL_TABLE_NAME: Flights
+      PSQL_LIMIT_RESPONSE_TIME: 10
 
   dal_tickets:
     build: 
@@ -120,23 +119,41 @@ services:
     container_name: catalog
     ports:
       - "80:12004"
-    depends_on:
-      - psql_db
     networks:
       - db
     environment:
       DAL_FLIGHTS_URL: http://dal_flights:12001/postgres/flights
       LIMIT_RESPONSE_TIME: 5
 
-  # auth:
-  #   build: 
-  #     context: ./Auth
-  #   container_name: auth
-  #   ports:
-  #     - "81:12005"
-  #   depends_on:
-  #     - psql_db
-  #   networks:
-  #     - db
-  #   environment:
-  #     DAL_CUSTOMERS_URL: http://dal_customers:12000/dal/customers/postgres
+  auth:
+    build: 
+      context: ./Auth
+    container_name: auth
+    ports:
+      - "81:12005"
+    networks:
+      - db
+    environment:
+      DAL_CUSTOMERS_URL: http://dal_customers:12000/postgres/customers
+      LIMIT_RESPONSE_TIME: 5
+
+  cart:
+    build:
+      context: ./Cart
+    container_name: cart
+    ports:
+      - "82:12003"
+    networks:
+      - db   
+
+  order_ticket:
+    build:
+      context: ./OrderTicket
+    container_name: order_ticket
+    ports:
+      - "83:12009"
+    networks:
+      - db
+    environment:
+      CART_URL: http://cart:12003/cart
+      LIMIT_RESPONSE_TIME: 5

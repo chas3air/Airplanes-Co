@@ -1,4 +1,4 @@
-package auth
+package router
 
 import (
 	"bytes"
@@ -7,12 +7,20 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/chas3air/Airplanes-Co/Auth/internal/service"
 )
 
 var env_url = os.Getenv("DAL_CUSTOMERS_URL")
+var limitTime = service.GetLimitTime()
+
+var httpClient = &http.Client{
+	Timeout: limitTime,
+}
 
 // SignInHandler handles user sign-in requests.
-// It retrieves login and password from the request, and validates them against the customer database.
+// It retrieves the login and password from the request, validates them against the customer database,
+// and returns the response from the authentication service.
 func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Initiating sign-in process")
 
@@ -20,9 +28,10 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	login := r.Form.Get("login")
 	password := r.Form.Get("password")
 
-	url := fmt.Sprintf("%s/get/lp?login=%s&password=%s", env_url, login, password)
+	url := fmt.Sprintf("%s/login/auth?login=%s&password=%s", env_url, login, password)
+	log.Println("url:", url)
 
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		log.Printf("Error during sign-in: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -44,7 +53,8 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // SignUpHandler handles user sign-up requests.
-// It reads user data from the request body and inserts it into the customer database.
+// It reads user data from the request body, sends it to the customer database,
+// and returns the response from the registration service.
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Initiating sign-up process")
 
@@ -56,7 +66,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	resp, err := http.Post(env_url+"/insert", "application/json", bytes.NewBuffer(body))
+	resp, err := httpClient.Post(env_url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		log.Printf("Error sending request during sign-up: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

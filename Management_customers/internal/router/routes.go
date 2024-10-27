@@ -54,7 +54,7 @@ func GetCustomerByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	id_s := mux.Vars(r)["id"]
 
-	resp, err := httpClient.Get(database_url + "/" + id_s)
+	resp, err := httpClient.Get(database_url + "/" + id_s + "/")
 	if err != nil {
 		log.Println("Cannot send request to", database_url)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -194,7 +194,7 @@ func DeleteCustomerHandler(w http.ResponseWriter, r *http.Request) {
 
 	id_s := mux.Vars(r)["id"]
 
-	req, err := http.NewRequest(http.MethodDelete, database_url+"/"+id_s, nil)
+	req, err := http.NewRequest(http.MethodDelete, database_url+"/"+id_s+"/", nil)
 	if err != nil {
 		log.Println("Error creating request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
