@@ -1,4 +1,6 @@
-version: '3.7'
+# TODO: изменить envirometn для catalog, auth
+
+version: '3.8'
 
 networks:
   db:
@@ -122,7 +124,7 @@ services:
     networks:
       - db
     environment:
-      DAL_FLIGHTS_URL: http://dal_flights:12001/postgres/flights
+      MANAGEMENT_FLIGHTS_URL: http://management_flights:12006/management-flights/flights
       LIMIT_RESPONSE_TIME: 5
 
   auth:
@@ -134,7 +136,7 @@ services:
     networks:
       - db
     environment:
-      DAL_CUSTOMERS_URL: http://dal_customers:12000/postgres/customers
+      MANAGEMENT_CUSTOMERS_URL: http://management_customers:12007/management-customers/customers
       LIMIT_RESPONSE_TIME: 5
 
   cart:
@@ -156,4 +158,16 @@ services:
       - db
     environment:
       CART_URL: http://cart:12003/cart
+      LIMIT_RESPONSE_TIME: 5
+  
+  purchased_tickets:
+    build:
+      context: ./PurchasedTickets
+    container_name: purchased_tickets
+    ports:
+      - "84:12010"
+    networks:
+      - db
+    environment:
+      MANAGEMENT_TICKETS_URL: http://management_tickets:12008/management-tickets/tickets
       LIMIT_RESPONSE_TIME: 5

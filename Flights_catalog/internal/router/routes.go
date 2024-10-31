@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var dal_flights_url = os.Getenv("DAL_FLIGHTS_URL")
+var dal_flights_url = os.Getenv("MANAGEMENT_FLIGHTS_URL")
 var limitTime = service.GetLimitTime()
 
 // GetFlightsHandler handles GET requests to fetch all flights.

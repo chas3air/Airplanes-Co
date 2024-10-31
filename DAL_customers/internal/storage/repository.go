@@ -2,6 +2,8 @@ package storage
 
 import "context"
 
+//TODO: переделать на дженерики
+
 type DBRepository interface {
 	GetAll(context.Context) (any, error)
 	GetById(context.Context, any) (any, error)

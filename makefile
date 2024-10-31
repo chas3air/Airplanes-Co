@@ -11,3 +11,6 @@ refresh:
 	@docker compose down
 	@docker compose build
 	@docker compose up
+
+push:
+	@docker compose push

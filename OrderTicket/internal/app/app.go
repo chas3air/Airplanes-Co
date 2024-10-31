@@ -7,6 +7,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// TODO: протестировать 
+
 func Run() {
 	r := mux.NewRouter()
 

@@ -11,7 +11,7 @@ import (
 	"github.com/chas3air/Airplanes-Co/Auth/internal/service"
 )
 
-var env_url = os.Getenv("DAL_CUSTOMERS_URL")
+var env_url = os.Getenv("MANAGEMENT_CUSTOMERS_URL")
 var limitTime = service.GetLimitTime()
 
 var httpClient = &http.Client{
@@ -28,7 +28,7 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	login := r.Form.Get("login")
 	password := r.Form.Get("password")
 
-	url := fmt.Sprintf("%s/login/auth?login=%s&password=%s", env_url, login, password)
+	url := fmt.Sprintf("%s/login?login=%s&password=%s", env_url, login, password)
 	log.Println("url:", url)
 
 	resp, err := httpClient.Get(url)
