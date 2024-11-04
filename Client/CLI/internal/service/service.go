@@ -56,3 +56,4 @@ func Logout() error {
 	_, err := http.NewRequest(http.MethodDelete, config.Backend_url+"/flight/logout", nil)
 	return err
 }
+

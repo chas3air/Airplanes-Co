@@ -1,4 +1,4 @@
-package customersadmininterface
+package customersfunctions
 
 import (
 	"bufio"
@@ -18,6 +18,8 @@ import (
 var limitTime = service.GetLimitTime()
 
 // /customers/get
+// GetAllCustomers retrieves a list of all customers from the API.
+// Returns an array of customers and an error if the request fails.
 func GetAllCustomers() ([]models.Customer, error) {
 	resp, err := http.Get(config.Backend_url + "/customers/get")
 	if err != nil {
@@ -39,12 +41,14 @@ func GetAllCustomers() ([]models.Customer, error) {
 }
 
 // /customers/insert + body(json)
+// AddCustomer prompts the user for data to create a new customer and adds it to the system.
+// Returns the added customer and an error if there was a problem.
 func AddCustomer() (models.Customer, error) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	login := service.GetInput(scanner, "Enter login")
 	password := service.GetInput(scanner, "Enter password")
-	role := service.GetInput(scanner, "Ernter role")
+	role := service.GetInput(scanner, "Enter role")
 	surname := service.GetInput(scanner, "Enter surname")
 	name := service.GetInput(scanner, "Enter name")
 
@@ -60,6 +64,8 @@ func AddCustomer() (models.Customer, error) {
 }
 
 // /customers/update + body(json)
+// UpdateCustomer updates the data of an existing customer by their UUID.
+// Returns the updated customer and an error if there was a problem.
 func UpdateCustomer(uuidStr string) (models.Customer, error) {
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -87,6 +93,8 @@ func UpdateCustomer(uuidStr string) (models.Customer, error) {
 }
 
 // /customers/delete?id=...
+// DeleteCustomer removes a customer from the system by their ID.
+// Returns the deleted customer and an error if there was a problem.
 func DeleteCustomer(id string) (models.Customer, error) {
 	req, err := http.NewRequest(http.MethodDelete, config.Backend_url+"/customers/delete?id="+id, nil)
 	if err != nil {
@@ -103,7 +111,7 @@ func DeleteCustomer(id string) (models.Customer, error) {
 		return models.Customer{}, err
 	}
 	defer resp.Body.Close()
-	
+
 	resp_body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return models.Customer{}, err
@@ -117,6 +125,9 @@ func DeleteCustomer(id string) (models.Customer, error) {
 	return customer, nil
 }
 
+// /customers/insert + body(json)
+// postCustomer sends the new customer data to the server for addition.
+// Returns the added customer and an error if there was a problem.
 func postCustomer(customer models.Customer) (models.Customer, error) {
 	bs, err := json.Marshal(customer)
 	if err != nil {
@@ -141,7 +152,7 @@ func postCustomer(customer models.Customer) (models.Customer, error) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Cannot read resp body")
+		fmt.Println("Cannot read response body")
 		return models.Customer{}, err
 	}
 
@@ -154,6 +165,9 @@ func postCustomer(customer models.Customer) (models.Customer, error) {
 	return outCustomer, nil
 }
 
+// /customers/update + body(json)
+// updateCustomer sends the updated customer data to the server.
+// Returns the updated customer and an error if there was a problem.
 func updateCustomer(customer models.Customer) (models.Customer, error) {
 	bs, err := json.Marshal(customer)
 	if err != nil {

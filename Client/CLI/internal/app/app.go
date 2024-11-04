@@ -3,9 +3,13 @@ package app
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
+	"sync"
+	"time"
 
-	flightsadmininterface "github.com/chas3air/Airplanes-Co/Client/CLI/internal/Interfaces/FlightsAdminInterface"
+	customersfunctions "github.com/chas3air/Airplanes-Co/Client/CLI/internal/Functions/CustomersFunctions"
+	flightsfunctions "github.com/chas3air/Airplanes-Co/Client/CLI/internal/Functions/FlightsFunctions"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/config"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/service"
@@ -17,21 +21,64 @@ func Run() {
 	for {
 		switch current_customer.Role {
 		case config.FlightsAdmin:
-			FlightsAdminInterface(&current_customer)
+			flightsAdminInterface(&current_customer)
 		case config.CustomersAdmin:
-			CustomersAdminInterface(&current_customer)
+			customersAdminInterface(&current_customer)
 		case config.GeneralAdmin:
-			GeneralAdminInterface(&current_customer)
+			generalAdminInterface(&current_customer)
 		case config.User:
-			CustomersInterface(&current_customer)
+			customersInterface(&current_customer)
 		case config.Guest:
-			GuestInterface(&current_customer)
+			guestInterface(&current_customer)
 		}
 	}
 }
 
-func FlightsAdminInterface(user *models.Customer) {
+func flightsAdminInterface(user *models.Customer) {
 	scanner := bufio.NewScanner(os.Stdin)
+	var localFlights []models.Flight
+	var prepFlightToInsert = make([]models.Flight, 0, 5)
+	var prepFlightToUpdate = make([]models.Flight, 0, 5)
+	var prepIdFlightToDelete = make([]string, 0, 10)
+	var err error
+	var mut sync.Mutex
+
+	localFlights, err = flightsfunctions.GetAllFlights()
+	if err != nil {
+		fmt.Println("Flights wasnt been loaded")
+	}
+
+	go func() {
+		for {
+			mut.Lock()
+			for _, v := range prepFlightToInsert {
+				_, err := flightsfunctions.PostFlight(v)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+
+			for _, v := range prepFlightToUpdate {
+				_, err := flightsfunctions.UpdateFlight(v)
+				if err != nil {
+					log.Println()
+				}
+			}
+
+			for _, v := range prepIdFlightToDelete {
+				_, err := flightsfunctions.DeleteFlight(v)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+
+			prepFlightToInsert = make([]models.Flight, 0, 10)
+			prepFlightToUpdate = make([]models.Flight, 0, 10)
+			prepIdFlightToDelete = make([]string, 0, 10)
+			mut.Unlock()
+			time.Sleep(3 * time.Second)
+		}
+	}()
 
 	for {
 		// тут очистка консоли
@@ -46,33 +93,23 @@ func FlightsAdminInterface(user *models.Customer) {
 
 		switch choise {
 		case "1":
-			flights, err := flightsadmininterface.GetAllFlights()
-			if err != nil {
-				fmt.Println(err.Error())
-				break
-			}
-
-			for _, v := range flights {
+			fmt.Println("Show all flights")
+			for _, v := range localFlights {
 				fmt.Println(v)
 			}
+			bufio.NewReader(os.Stdin).ReadString('\n')
 
 		case "2":
-			flight, err := flightsadmininterface.AddFlight()
-			if err != nil {
-				fmt.Println(err.Error())
-				break
-			}
+			fmt.Println("Adding flights")
+			flight := models.Flight{}
+			localFlights = append(localFlights, flight)
+			prepFlightToInsert = append(prepFlightToInsert, flight)
 
-			fmt.Println("Added flight:", flight.String())
+			time.Sleep(200 * time.Millisecond)
 
 		case "3":
-			flights, err := flightsadmininterface.GetAllFlights()
-			if err != nil {
-				fmt.Println(err.Error())
-				break
-			}
-
-			for _, v := range flights {
+			fmt.Println("Update flight")
+			for _, v := range localFlights {
 				fmt.Println(v)
 			}
 
@@ -81,27 +118,36 @@ func FlightsAdminInterface(user *models.Customer) {
 				fmt.Println(err.Error())
 				break
 			}
-			if id < 0 || id > len(flights) {
+			if id < 0 || id > len(localFlights) {
 				fmt.Println("Undefined element")
 				break
 			}
 
-			flight, err := flightsadmininterface.UpdateFlight(flights[id-1].Id.String())
+			flight, err := flightsfunctions.CreateFlight()
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				break
 			}
 
-			fmt.Println("Updated flight:", flight.String())
+			prepFlightToUpdate = append(prepFlightToUpdate, flight)
+
+			for i, v := range localFlights {
+				if v.Id == localFlights[id+1].Id {
+					localFlights[i].FromWhere = flight.FromWhere
+					localFlights[i].Destination = flight.Destination
+					localFlights[i].FlightTime = flight.FlightTime
+					localFlights[i].FlightDuration = flight.FlightDuration
+
+					fmt.Println("Updated flight:", v.String())
+					break
+				}
+			}
+			time.Sleep(200 * time.Millisecond)
 
 		case "4":
-			flights, err := flightsadmininterface.GetAllFlights()
-			if err != nil {
-				fmt.Println(err.Error())
-				break
-			}
+			fmt.Println("Deleting flight")
 
-			for _, v := range flights {
+			for _, v := range localFlights {
 				fmt.Println(v)
 			}
 
@@ -110,23 +156,31 @@ func FlightsAdminInterface(user *models.Customer) {
 				fmt.Println(err.Error())
 				break
 			}
-			if id < 0 || id > len(flights) {
+			if id < 0 || id > len(localFlights) {
 				fmt.Println("Undefined element")
 				break
 			}
 
+			prepIdFlightToDelete = append(prepIdFlightToDelete, localFlights[id+1].Id.String())
+			time.Sleep(200 * time.Millisecond)
+
 		case "5":
+			fmt.Println("Logout")
+
 			if err := service.Logout(); err != nil {
 				break
 			}
 			*user = models.Customer{}
+			time.Sleep(200 * time.Millisecond)
 
 		default:
 			fmt.Println("Error number of item")
+			time.Sleep(200 * time.Millisecond)
 		}
 	}
 }
-func CustomersAdminInterface(user *models.Customer) {
+
+func customersAdminInterface(user *models.Customer) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
@@ -141,17 +195,44 @@ func CustomersAdminInterface(user *models.Customer) {
 
 		switch choise {
 		case "1":
+			fmt.Println("Get all customers")
+
+			customers, err := customersfunctions.GetAllCustomers()
+			if err != nil {
+				fmt.Println(err)
+				break
+			}
+			for _, v := range customers {
+				fmt.Println(v.String())
+			}
+			bufio.NewReader(os.Stdin).ReadString('\n')
+
 		case "2":
+			fmt.Println("Adding customer")
+
+			time.Sleep(200 * time.Millisecond)
+
 		case "3":
+			fmt.Println("Update customers")
+			time.Sleep(200 * time.Millisecond)
+
 		case "4":
+			fmt.Println("Deleting customer")
+			time.Sleep(200 * time.Millisecond)
+
 		case "5":
+			fmt.Println("Logout")
+			time.Sleep(200 * time.Millisecond)
+
 		default:
 			fmt.Println("Error number of item")
+			time.Sleep(200 * time.Millisecond)
+
 		}
 	}
 }
 
-func GeneralAdminInterface(user *models.Customer) {
+func generalAdminInterface(user *models.Customer) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
@@ -184,7 +265,7 @@ func GeneralAdminInterface(user *models.Customer) {
 	}
 }
 
-func CustomersInterface(user *models.Customer) {
+func customersInterface(user *models.Customer) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
@@ -212,7 +293,7 @@ func CustomersInterface(user *models.Customer) {
 	}
 }
 
-func GuestInterface(user *models.Customer) {
+func guestInterface(user *models.Customer) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
@@ -225,6 +306,17 @@ func GuestInterface(user *models.Customer) {
 
 		switch choise {
 		case "1":
+			flights, err := flightsfunctions.GetAllFlights()
+			if err != nil {
+				fmt.Println(err)
+				break
+			}
+
+			for _, v := range flights {
+				fmt.Println(v.String())
+			}
+
+			bufio.NewReader(os.Stdin).ReadString('\n')
 		case "2":
 		case "3":
 		default:
