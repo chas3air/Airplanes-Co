@@ -9,7 +9,7 @@ volumes:
 services:
   psql_db:
     build:
-      context: ./psql
+      context: "./Core/psql"
     container_name: psql_cont
     ports:
       - "5000:5432"
@@ -22,7 +22,7 @@ services:
 
   dal_customers:
     build:
-      context: ./Dal_customers
+      context: ./Core/Dal_customers
     container_name: dal_customers
     depends_on:
       - psql_db
@@ -41,7 +41,7 @@ services:
 
   dal_flights:
     build:
-      context: ./Dal_flights
+      context: ./Core/Dal_flights
     container_name: dal_flights
     depends_on:
       - psql_db
@@ -60,7 +60,7 @@ services:
 
   dal_tickets:
     build: 
-      context: ./Dal_tickets
+      context: ./Core/Dal_tickets
     container_name: dal_tickets
     depends_on:
       - psql_db
@@ -79,7 +79,7 @@ services:
 
   management_customers:
     build:
-      context: ./Management_customers
+      context: ./Core/Management_customers
     container_name: management_customers
     networks:
       - db
@@ -91,7 +91,7 @@ services:
 
   management_flights:
     build:
-      context: ./Management_flights
+      context: ./Core/Management_flights
     container_name: management_flights
     networks:
       - db
@@ -103,7 +103,7 @@ services:
 
   management_tickets:
     build:
-      context: ./Management_tickets
+      context: ./Core/Management_tickets
     container_name: management_tickets
     networks:
       - db
@@ -115,7 +115,7 @@ services:
 
   catalog:
     build:
-      context: ./Flights_catalog
+      context: ./Core/Flights_catalog
     container_name: catalog
     ports:
       - "80:12004"
@@ -127,7 +127,7 @@ services:
 
   auth:
     build: 
-      context: ./Auth
+      context: ./Core/Auth
     container_name: auth
     ports:
       - "81:12005"
@@ -139,7 +139,7 @@ services:
 
   cart:
     build:
-      context: ./Cart
+      context: ./Core/Cart
     container_name: cart
     ports:
       - "82:12003"
@@ -148,7 +148,7 @@ services:
 
   order_ticket:
     build:
-      context: ./OrderTicket
+      context: ./Core/OrderTicket
     container_name: order_ticket
     ports:
       - "83:12009"
@@ -160,7 +160,7 @@ services:
   
   purchased_tickets:
     build:
-      context: ./PurchasedTickets
+      context: ./Core/PurchasedTickets
     container_name: purchased_tickets
     ports:
       - "84:12010"

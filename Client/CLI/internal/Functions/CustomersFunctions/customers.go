@@ -12,7 +12,6 @@ import (
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/config"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/service"
-	"github.com/google/uuid"
 )
 
 var limitTime = service.GetLimitTime()
@@ -43,7 +42,7 @@ func GetAllCustomers() ([]models.Customer, error) {
 // /customers/insert + body(json)
 // AddCustomer prompts the user for data to create a new customer and adds it to the system.
 // Returns the added customer and an error if there was a problem.
-func AddCustomer() (models.Customer, error) {
+func CreateCustomer() (models.Customer, error) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	login := service.GetInput(scanner, "Enter login")
@@ -60,36 +59,7 @@ func AddCustomer() (models.Customer, error) {
 		Name:     name,
 	}
 
-	return postCustomer(customer)
-}
-
-// /customers/update + body(json)
-// UpdateCustomer updates the data of an existing customer by their UUID.
-// Returns the updated customer and an error if there was a problem.
-func UpdateCustomer(uuidStr string) (models.Customer, error) {
-	scanner := bufio.NewScanner(os.Stdin)
-
-	id, err := uuid.Parse(uuidStr)
-	if err != nil {
-		return models.Customer{}, fmt.Errorf("failed to parse: %s", uuidStr)
-	}
-
-	login := service.GetInput(scanner, "Enter login")
-	password := service.GetInput(scanner, "Enter password")
-	role := service.GetInput(scanner, "Enter role")
-	surname := service.GetInput(scanner, "Enter surname")
-	name := service.GetInput(scanner, "Enter name")
-
-	customer := models.Customer{
-		Id:       id,
-		Login:    login,
-		Password: password,
-		Role:     role,
-		Surname:  surname,
-		Name:     name,
-	}
-
-	return updateCustomer(customer)
+	return customer, nil
 }
 
 // /customers/delete?id=...
@@ -128,7 +98,7 @@ func DeleteCustomer(id string) (models.Customer, error) {
 // /customers/insert + body(json)
 // postCustomer sends the new customer data to the server for addition.
 // Returns the added customer and an error if there was a problem.
-func postCustomer(customer models.Customer) (models.Customer, error) {
+func PostCustomer(customer models.Customer) (models.Customer, error) {
 	bs, err := json.Marshal(customer)
 	if err != nil {
 		fmt.Println("Error marshaling customer:", err)
@@ -168,7 +138,7 @@ func postCustomer(customer models.Customer) (models.Customer, error) {
 // /customers/update + body(json)
 // updateCustomer sends the updated customer data to the server.
 // Returns the updated customer and an error if there was a problem.
-func updateCustomer(customer models.Customer) (models.Customer, error) {
+func UpdateCustomer(customer models.Customer) (models.Customer, error) {
 	bs, err := json.Marshal(customer)
 	if err != nil {
 		fmt.Println("Error marshaling customer:", err)
