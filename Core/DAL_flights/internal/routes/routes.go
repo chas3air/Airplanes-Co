@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/chas3air/Airplanes-Co/Core/DAL_flights/internal/models"
 	"github.com/chas3air/Airplanes-Co/Core/DAL_flights/internal/service"
@@ -14,7 +15,7 @@ import (
 )
 
 // TODO: изменить psql на переменную среды
-var FlightsDB = storage.MustGetInstanceOfFlightsStorage("psql")
+var FlightsDB = storage.MustGetInstanceOfFlightsStorage(os.Getenv("TYPE_OF_DB"))
 var limitTime = service.GetLimitTime("PSQL_LIMIT_RESPONSE_TIME")
 
 func GetFlights(w http.ResponseWriter, r *http.Request) {

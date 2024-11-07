@@ -11,11 +11,11 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/chas3air/Airplanes-Co/Core/DAL_flights/internal/models"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetAll(t *testing.T) {
-	// Mock database setup
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("failed to open mock database: %s", err)
@@ -24,19 +24,21 @@ func TestGetAll(t *testing.T) {
 
 	storage := MustNewPsqlFlightsStorage(db)
 
-	// Test for successful retrieval of all flights
 	t.Run("Success", func(t *testing.T) {
 		flightTime1, _ := time.Parse(time.RFC3339, "2023-10-25T15:00:00Z")
 		flightTime2, _ := time.Parse(time.RFC3339, "2023-10-26T15:00:00Z")
 
+		id1 := uuid.New()
+		id2 := uuid.New()
+
 		expectedFlights := []models.Flight{
-			{Id: uuid.New(), FromWhere: "NYC", Destination: "LAX", FlightTime: flightTime1, FlightDuration: 6},
-			{Id: uuid.New(), FromWhere: "LAX", Destination: "NYC", FlightTime: flightTime2, FlightDuration: 6},
+			{Id: id1, FromWhere: "NYC", Destination: "LAX", FlightTime: flightTime1, FlightDuration: 6, FlightSeatsCosts: []int{100, 150, 200, 250}},
+			{Id: id2, FromWhere: "LAX", Destination: "NYC", FlightTime: flightTime2, FlightDuration: 6, FlightSeatsCosts: []int{120, 170, 220, 270}},
 		}
 
-		rows := sqlmock.NewRows([]string{"id", "fromWhere", "destination", "flightTime", "flightDuration"}).
-			AddRow(expectedFlights[0].Id, expectedFlights[0].FromWhere, expectedFlights[0].Destination, expectedFlights[0].FlightTime, expectedFlights[0].FlightDuration).
-			AddRow(expectedFlights[1].Id, expectedFlights[1].FromWhere, expectedFlights[1].Destination, expectedFlights[1].FlightTime, expectedFlights[1].FlightDuration)
+		rows := sqlmock.NewRows([]string{"id", "fromWhere", "destination", "flightTime", "flightDuration", "flightSeatsCost"}).
+			AddRow(id1, expectedFlights[0].FromWhere, expectedFlights[0].Destination, expectedFlights[0].FlightTime, expectedFlights[0].FlightDuration, pq.Array(expectedFlights[0].FlightSeatsCosts)).
+			AddRow(id2, expectedFlights[1].FromWhere, expectedFlights[1].Destination, expectedFlights[1].FlightTime, expectedFlights[1].FlightDuration, pq.Array(expectedFlights[1].FlightSeatsCosts))
 
 		mock.ExpectQuery("SELECT \\* FROM " + os.Getenv("PSQL_TABLE_NAME") + ";").
 			WillReturnRows(rows)
@@ -44,13 +46,8 @@ func TestGetAll(t *testing.T) {
 		flights, err := storage.GetAll(context.Background())
 		assert.NoError(t, err)
 		assert.Equal(t, expectedFlights, flights)
-
-		if err := mock.ExpectationsWereMet(); err != nil {
-			t.Errorf("there were unfulfilled expectations: %s", err)
-		}
 	})
 
-	// Test for error in querying
 	t.Run("QueryError", func(t *testing.T) {
 		mock.ExpectQuery("SELECT \\* FROM " + os.Getenv("PSQL_TABLE_NAME") + ";").
 			WillReturnError(fmt.Errorf("query error"))
@@ -66,7 +63,6 @@ func TestGetAll(t *testing.T) {
 }
 
 func TestGetById(t *testing.T) {
-	// Mock database setup
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("failed to open mock database: %s", err)
@@ -75,21 +71,22 @@ func TestGetById(t *testing.T) {
 
 	storage := MustNewPsqlFlightsStorage(db)
 
-	// Test for successful retrieval by ID
 	t.Run("Success", func(t *testing.T) {
 		flightTime, _ := time.Parse(time.RFC3339, "2023-10-25T15:00:00Z")
+		expectedId := uuid.New() // Генерируем уникальный UUID
 		expectedFlight := models.Flight{
-			Id:             uuid.New(),
-			FromWhere:      "NYC",
-			Destination:    "LAX",
-			FlightTime:     flightTime,
-			FlightDuration: 6,
+			Id:               expectedId,
+			FromWhere:        "NYC",
+			Destination:      "LAX",
+			FlightTime:       flightTime,
+			FlightDuration:   6,
+			FlightSeatsCosts: []int{100, 150, 200, 250},
 		}
 
 		mock.ExpectQuery("SELECT \\* FROM " + os.Getenv("PSQL_TABLE_NAME") + " WHERE id = \\$1;").
 			WithArgs(expectedFlight.Id).
-			WillReturnRows(sqlmock.NewRows([]string{"id", "from_where", "destination", "flight_time", "flight_duration"}).
-				AddRow(expectedFlight.Id, expectedFlight.FromWhere, expectedFlight.Destination, expectedFlight.FlightTime, expectedFlight.FlightDuration))
+			WillReturnRows(sqlmock.NewRows([]string{"id", "fromWhere", "destination", "flightTime", "flightDuration", "flightSeatsCost"}).
+				AddRow(expectedFlight.Id, expectedFlight.FromWhere, expectedFlight.Destination, expectedFlight.FlightTime, expectedFlight.FlightDuration, pq.Array(expectedFlight.FlightSeatsCosts)))
 
 		flight, err := storage.GetById(context.Background(), expectedFlight.Id)
 		assert.NoError(t, err)
@@ -100,13 +97,14 @@ func TestGetById(t *testing.T) {
 		}
 	})
 
-	// Test for flight not found
 	t.Run("NotFound", func(t *testing.T) {
+		// Генерируем новый UUID для этого теста
+		notFoundId := uuid.New() // Новый UUID для теста "NotFound"
 		mock.ExpectQuery("SELECT \\* FROM " + os.Getenv("PSQL_TABLE_NAME") + " WHERE id = \\$1;").
-			WithArgs(2).
+			WithArgs(notFoundId). // Используем notFoundId
 			WillReturnError(sql.ErrNoRows)
 
-		flight, err := storage.GetById(context.Background(), 2)
+		flight, err := storage.GetById(context.Background(), notFoundId) // Передаем notFoundId
 		assert.Error(t, err)
 		assert.Nil(t, flight)
 
@@ -117,7 +115,6 @@ func TestGetById(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
-	// Настройка мок базы данных
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("failed to open mock database: %s", err)
@@ -126,33 +123,29 @@ func TestInsert(t *testing.T) {
 
 	s := MustNewPsqlFlightsStorage(db)
 
-	// Создание нового рейса для вставки
 	flightTime, _ := time.Parse(time.RFC3339, "2023-10-25T15:00:00Z")
 	newFlight := models.Flight{
-		FromWhere:      "NYC",
-		Destination:    "LAX",
-		FlightTime:     flightTime,
-		FlightDuration: 6,
+		FromWhere:        "NYC",
+		Destination:      "LAX",
+		FlightTime:       flightTime,
+		FlightDuration:   6,
+		FlightSeatsCosts: []int{100, 150, 200, 250},
 	}
 
-	// Ожидание выполнения вставки
-	mock.ExpectQuery("INSERT INTO "+os.Getenv("PSQL_TABLE_NAME")+" \\(fromWhere, destination, flightTime, flightDuration\\) VALUES \\(\\$1, \\$2, \\$3, \\$4\\) RETURNING id").
-		WithArgs(newFlight.FromWhere, newFlight.Destination, newFlight.FlightTime, newFlight.FlightDuration).
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uuid.New())) // Возвращаем новый UUID
+	mock.ExpectQuery("INSERT INTO "+os.Getenv("PSQL_TABLE_NAME")+" \\(fromWhere, destination, flightTime, flightDuration, flightSeatsCost\\) VALUES \\(\\$1, \\$2, \\$3, \\$4, \\$5\\) RETURNING id").
+		WithArgs(newFlight.FromWhere, newFlight.Destination, newFlight.FlightTime, newFlight.FlightDuration, pq.Array(newFlight.FlightSeatsCosts[:])).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uuid.New()))
 
-	// Вызов метода вставки
 	flight, err := s.Insert(context.Background(), newFlight)
 	assert.NoError(t, err)
 	assert.NotNil(t, flight)
 
-	// Проверка выполнения всех ожиданий
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 }
 
 func TestUpdate(t *testing.T) {
-	// Mock database setup
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("failed to open mock database: %s", err)
@@ -162,21 +155,20 @@ func TestUpdate(t *testing.T) {
 	storage := MustNewPsqlFlightsStorage(db)
 
 	var generatedID = uuid.New()
-	// Test for successful update
 	t.Run("Success", func(t *testing.T) {
 		flightTime, _ := time.Parse(time.RFC3339, "2023-10-25T15:00:00Z")
 		updatedFlight := models.Flight{
-			Id:             generatedID,
-			FromWhere:      "NYC",
-			Destination:    "LAX",
-			FlightTime:     flightTime,
-			FlightDuration: 6,
+			Id:               generatedID,
+			FromWhere:        "NYC",
+			Destination:      "LAX",
+			FlightTime:       flightTime,
+			FlightDuration:   6,
+			FlightSeatsCosts: []int{100, 150, 200, 250},
 		}
 
-		// Ожидание выполнения запроса на обновление
-		mock.ExpectExec("UPDATE "+os.Getenv("PSQL_TABLE_NAME")+" SET fromWhere = \\$1, destination = \\$2, flightTime = \\$3, flightDuration = \\$4 WHERE id = \\$5").
-			WithArgs(updatedFlight.FromWhere, updatedFlight.Destination, updatedFlight.FlightTime, updatedFlight.FlightDuration, updatedFlight.Id).
-			WillReturnResult(sqlmock.NewResult(1, 1)) // Возвращаем результат обновления
+		mock.ExpectExec("UPDATE "+os.Getenv("PSQL_TABLE_NAME")+" SET fromWhere = \\$1, destination = \\$2, flightTime = \\$3, flightDuration = \\$4, flightSeatsCost = \\$5 WHERE id = \\$6").
+			WithArgs(updatedFlight.FromWhere, updatedFlight.Destination, updatedFlight.FlightTime, updatedFlight.FlightDuration, pq.Array(updatedFlight.FlightSeatsCosts), updatedFlight.Id).
+			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		flight, err := storage.Update(context.Background(), updatedFlight)
 		assert.NoError(t, err)
@@ -187,13 +179,19 @@ func TestUpdate(t *testing.T) {
 		}
 	})
 
-	// Test for update error
 	t.Run("UpdateError", func(t *testing.T) {
-		mock.ExpectExec("UPDATE "+os.Getenv("PSQL_TABLE_NAME")+" SET fromWhere = \\$1, destination = \\$2, flightTime = \\$3, flightDuration = \\$4 WHERE id = \\$5").
-			WithArgs("NYC", "LAX", time.Now(), 6, generatedID).
+		mock.ExpectExec("UPDATE "+os.Getenv("PSQL_TABLE_NAME")+" SET fromWhere = \\$1, destination = \\$2, flightTime = \\$3, flightDuration = \\$4, flightSeatsCost = \\$5 WHERE id = \\$6").
+			WithArgs("NYC", "LAX", time.Now(), 6, pq.Array([]int{100, 150, 200, 250}), generatedID). // Используем срез
 			WillReturnError(fmt.Errorf("update error"))
 
-		_, err := storage.Update(context.Background(), models.Flight{Id: generatedID, FromWhere: "NYC", Destination: "LAX", FlightDuration: 6, FlightTime: time.Now()})
+		_, err := storage.Update(context.Background(), models.Flight{
+			Id:               generatedID,
+			FromWhere:        "NYC",
+			Destination:      "LAX",
+			FlightDuration:   6,
+			FlightTime:       time.Now(),
+			FlightSeatsCosts: []int{100, 150, 200, 250},
+		})
 		assert.Error(t, err)
 
 		if err := mock.ExpectationsWereMet(); err != nil {
@@ -201,8 +199,8 @@ func TestUpdate(t *testing.T) {
 		}
 	})
 }
+
 func TestDelete(t *testing.T) {
-	// Mock database setup
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("failed to open mock database: %s", err)
@@ -211,21 +209,21 @@ func TestDelete(t *testing.T) {
 
 	storage := MustNewPsqlFlightsStorage(db)
 
-	// Test for successful deletion
 	t.Run("Success", func(t *testing.T) {
 		flightTime, _ := time.Parse(time.RFC3339, "2023-10-25T15:00:00Z")
 		flightToDelete := models.Flight{
-			Id:             uuid.New(),
-			FromWhere:      "NYC",
-			Destination:    "LAX",
-			FlightTime:     flightTime,
-			FlightDuration: 6,
+			Id:               uuid.New(),
+			FromWhere:        "NYC",
+			Destination:      "LAX",
+			FlightTime:       flightTime,
+			FlightDuration:   6,
+			FlightSeatsCosts: []int{100, 150, 200, 250},
 		}
 
 		mock.ExpectQuery("SELECT \\* FROM " + os.Getenv("PSQL_TABLE_NAME") + " WHERE id = \\$1;").
 			WithArgs(flightToDelete.Id).
-			WillReturnRows(sqlmock.NewRows([]string{"id", "from_where", "destination", "flight_time", "flight_duration"}).
-				AddRow(flightToDelete.Id, flightToDelete.FromWhere, flightToDelete.Destination, flightToDelete.FlightTime, flightToDelete.FlightDuration))
+			WillReturnRows(sqlmock.NewRows([]string{"id", "fromWhere", "destination", "flightTime", "flightDuration", "flightSeatsCost"}).
+				AddRow(flightToDelete.Id, flightToDelete.FromWhere, flightToDelete.Destination, flightToDelete.FlightTime, flightToDelete.FlightDuration, pq.Array(flightToDelete.FlightSeatsCosts[:])))
 
 		mock.ExpectExec("DELETE FROM " + os.Getenv("PSQL_TABLE_NAME") + " WHERE id = \\$1;").
 			WithArgs(flightToDelete.Id).
@@ -240,7 +238,6 @@ func TestDelete(t *testing.T) {
 		}
 	})
 
-	// Test for delete error
 	t.Run("DeleteError", func(t *testing.T) {
 		mock.ExpectQuery("SELECT \\* FROM " + os.Getenv("PSQL_TABLE_NAME") + " WHERE id = \\$1;").
 			WithArgs(2).

@@ -16,7 +16,8 @@ CREATE TABLE IF NOT EXISTS Flights (
     fromWhere VARCHAR(50) NOT NULL,
     destination VARCHAR(50) NOT NULL,
     flightTime TIMESTAMP NOT NULL,
-    flightDuration INT NOT NULL
+    flightDuration INT NOT NULL,
+    flightSeatsCost INTEGER[] NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS Tickets (

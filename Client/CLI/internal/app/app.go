@@ -34,18 +34,19 @@ func Run() {
 
 func customersAdminInterface(user *models.Customer) {
 	scanner := bufio.NewScanner(os.Stdin)
-	var localCustomers []models.Customer
-	var prepCustomerToInsert = make([]models.Customer, 0, 5)
-	var prepCustomerToUpdate = make([]models.Customer, 0, 5)
-	var prepIdCustomerToDelete = make([]string, 0, 5)
+	// var localCustomers []models.Customer
+	// var prepCustomerToInsert = make([]models.Customer, 0, 5)
+	// var prepCustomerToUpdate = make([]models.Customer, 0, 5)
+	// var prepIdCustomerToDelete = make([]string, 0, 5)
 	var err error
 	//var mut sync.Mutex
 
-	localCustomers, err = customersfunctions.GetAllCustomers()
+	localCustomers, err := customersfunctions.GetAllCustomers()
 	if err != nil {
 		fmt.Println("customers weren't loaded", err)
 		return
 	}
+	_ = localCustomers
 
 	for {
 		fmt.Println("Select an item")
