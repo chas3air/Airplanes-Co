@@ -1,7 +1,20 @@
 package main
 
-import "github.com/chas3air/Airplanes-Co/Core/Auth/internal/app"
+import (
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/chas3air/Airplanes-Co/Core/Auth/internal/app"
+)
 
 func main() {
-	app.Run()
+	go app.Run()
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
+	<-signalChan
+	log.Println("Exit")
 }
