@@ -5,37 +5,16 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sync"
 	"time"
 
 	flightsfunctions "github.com/chas3air/Airplanes-Co/Client/CLI/internal/Functions/FlightsFunctions"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/service"
+	"github.com/google/uuid"
 )
 
 func FlightsAdminInterface(user *models.Customer) {
 	scanner := bufio.NewScanner(os.Stdin)
-	var localFlights []models.Flight
-	var prepFlightToInsert = make([]models.Flight, 0, 5)
-	var prepFlightToUpdate = make([]models.Flight, 0, 5)
-	var prepIdFlightToDelete = make([]string, 0, 10)
-	var err error
-	var mut sync.Mutex
-
-	localFlights, err = flightsfunctions.GetAllFlights()
-	if err != nil {
-		fmt.Println("Flights weren't loaded:", err)
-		return
-	}
-
-	go func() {
-		for {
-			mut.Lock()
-			processPreparations(&prepFlightToInsert, &prepFlightToUpdate, &prepIdFlightToDelete)
-			mut.Unlock()
-			time.Sleep(3 * time.Second)
-		}
-	}()
 
 	for {
 		clearConsole()
@@ -46,51 +25,90 @@ func FlightsAdminInterface(user *models.Customer) {
 		switch choice {
 		case "1":
 			fmt.Println("Show all flights")
+			localFlights, err := flightsfunctions.GetAllFlights()
+			if err != nil {
+				fmt.Println("Flights weren't loaded:", err)
+				time.Sleep(200 * time.Millisecond)
+				break
+			}
 			displayFlights(localFlights)
+			fmt.Println("Press Enter to continue...")
+			bufio.NewReader(os.Stdin).ReadString('\n')
 
 		case "2":
-			fmt.Println("Adding flights")
-			flight := models.Flight{}
-			if err := getFlightInput(scanner, &flight); err != nil {
-				fmt.Println("Error adding flight:", err)
+			fmt.Println("Show flight")
+			id := service.GetInput(scanner, "Enter id")
+			flight, err := flightsfunctions.GetFlightById(id)
+			if err != nil {
+				fmt.Println("Cannot get flight by id")
+				time.Sleep(200 * time.Millisecond)
 				break
 			}
-			localFlights = append(localFlights, flight)
-			prepFlightToInsert = append(prepFlightToInsert, flight)
+
+			fmt.Println(flight)
+			fmt.Println("Press Enter to continue...")
+			bufio.NewReader(os.Stdin).ReadString('\n')
 
 		case "3":
-			fmt.Println("Update flight")
-			displayFlights(localFlights)
-
-			id, err := service.GetInt(scanner, "Enter id (1-based index)")
-			if err != nil || id < 1 || id > len(localFlights) {
-				fmt.Println("Undefined element")
+			fmt.Println("Adding flights")
+			flight, err := flightsfunctions.CreateFlight()
+			if err != nil {
+				fmt.Println("Cannot create flight")
 				break
 			}
+
+			flight, err = flightsfunctions.InsertFlight(flight)
+			if err != nil {
+				fmt.Println("Cannot insert flight")
+			}
+
+			fmt.Println(flight)
+			fmt.Println("Press Enter to continue...")
+			bufio.NewReader(os.Stdin).ReadString('\n')
+
+		case "4":
+			fmt.Println("Update flight")
+
+			id := service.GetInput(scanner, "Enter id")
 
 			flight, err := flightsfunctions.CreateFlight()
 			if err != nil {
 				fmt.Println("Error creating flight:", err)
 				break
 			}
+			parsedId, err := uuid.Parse(id)
+			if err != nil {
+				fmt.Println("Cannot parse string to uuid")
+				time.Sleep(200 * time.Millisecond)
+				break
+			}
+			flight.Id = parsedId
 
-			prepFlightToUpdate = append(prepFlightToUpdate, flight)
-			localFlights[id-1] = flight
-			fmt.Println("Updated flight:", flight.String())
-
-		case "4":
-			fmt.Println("Deleting flight")
-			displayFlights(localFlights)
-
-			id, err := service.GetInt(scanner, "Enter id (1-based index)")
-			if err != nil || id < 1 || id > len(localFlights) {
-				fmt.Println("Undefined element")
+			_, err = flightsfunctions.UpdateFlight(flight)
+			if err != nil {
+				fmt.Println("Cannot update flight with id:", id)
+				time.Sleep(200 * time.Millisecond)
 				break
 			}
 
-			prepIdFlightToDelete = append(prepIdFlightToDelete, localFlights[id-1].Id.String())
+			fmt.Println(flight)
+			fmt.Println("Press Enter to continue...")
+			bufio.NewReader(os.Stdin).ReadString('\n')
 
 		case "5":
+			fmt.Println("Deleting flight")
+
+			id := service.GetInput(scanner, "Enter id")
+			flight, err := flightsfunctions.DeleteFlight(id)
+			if err != nil {
+				fmt.Println("Cannot detere flight")
+			}
+
+			fmt.Println(flight)
+			fmt.Println("Press Enter to continue...")
+			bufio.NewReader(os.Stdin).ReadString('\n')
+
+		case "6":
 			fmt.Println("Logout")
 			if err := service.Logout(); err != nil {
 				fmt.Println("Error logging out:", err)
@@ -106,9 +124,10 @@ func FlightsAdminInterface(user *models.Customer) {
 	}
 }
 
+// TODO: под снос
 func processPreparations(prepFlightToInsert, prepFlightToUpdate *[]models.Flight, prepIdFlightToDelete *[]string) {
 	for _, v := range *prepFlightToInsert {
-		if _, err := flightsfunctions.PostFlight(v); err != nil {
+		if _, err := flightsfunctions.InsertFlight(v); err != nil {
 			log.Println("Error posting flight:", err)
 		}
 	}
@@ -135,37 +154,16 @@ func displayFlights(flights []models.Flight) {
 	for i, flight := range flights {
 		fmt.Printf("%d: %s\n", i+1, flight.String())
 	}
-	fmt.Println("Press Enter to continue...")
-	bufio.NewReader(os.Stdin).ReadString('\n')
 }
 
 func displayMenu() {
 	fmt.Println("Select an item")
 	fmt.Println("1. Get all flights")
-	fmt.Println("2. Add flight")
-	fmt.Println("3. Update flight")
-	fmt.Println("4. Delete flight")
-	fmt.Println("5. Logout")
-}
-
-func getFlightInput(scanner *bufio.Scanner, flight *models.Flight) error {
-	flight.FromWhere = service.GetInput(scanner, "Enter from where will arrive plane")
-	flight.Destination = service.GetInput(scanner, "Enter destination")
-	flightTimeStr := service.GetInput(scanner, "Enter flight time (format: YYYY-MM-DD HH:MM:SS)")
-
-	flightTime, err := service.ParseTime(flightTimeStr, "2006-01-02 15:04:05")
-	if err != nil {
-		return err
-	}
-	flight.FlightTime = flightTime
-
-	flightDuration, err := service.GetInt(scanner, "Enter flight duration")
-	if err != nil {
-		return err
-	}
-	flight.FlightDuration = flightDuration
-
-	return nil
+	fmt.Println("2. Get a flight")
+	fmt.Println("3. Add flight")
+	fmt.Println("4. Update flight")
+	fmt.Println("5. Delete flight")
+	fmt.Println("6. Logout")
 }
 
 func clearConsole() {

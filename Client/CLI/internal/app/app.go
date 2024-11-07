@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
 	customersfunctions "github.com/chas3air/Airplanes-Co/Client/CLI/internal/Functions/CustomersFunctions"
@@ -36,25 +35,17 @@ func Run() {
 func customersAdminInterface(user *models.Customer) {
 	scanner := bufio.NewScanner(os.Stdin)
 	var localCustomers []models.Customer
-	_ = localCustomers
-	// var prepCustomerToInsert = make([]models.Customer, 0, 5)
-	// var prepCustomerToUpdate = make([]models.Customer, 0, 5)
-	// var prepIdCustomerToDelete = make([]string, 0, 5)
+	var prepCustomerToInsert = make([]models.Customer, 0, 5)
+	var prepCustomerToUpdate = make([]models.Customer, 0, 5)
+	var prepIdCustomerToDelete = make([]string, 0, 5)
 	var err error
-	var mut sync.Mutex
+	//var mut sync.Mutex
 
 	localCustomers, err = customersfunctions.GetAllCustomers()
 	if err != nil {
 		fmt.Println("customers weren't loaded", err)
 		return
 	}
-
-	go func() {
-		for {
-			mut.Lock()
-
-		}
-	}()
 
 	for {
 		fmt.Println("Select an item")

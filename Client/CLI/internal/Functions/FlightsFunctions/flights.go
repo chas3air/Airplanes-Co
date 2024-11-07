@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 
@@ -40,39 +41,28 @@ func GetAllFlights() ([]models.Flight, error) {
 	return flights, nil
 }
 
-// /flights/insertOne + body(json)
-// AddFlight prompts the user for data to create a new flight and adds it to the system.
-// Returns the added flight and an error if there was a problem.
-func CreateFlightAndAdd() (models.Flight, error) {
-	scanner := bufio.NewScanner(os.Stdin)
+func GetFlightById(id string) (models.Flight, error) {
+	log.Println("get flight by id")
 
-	fromWhere := service.GetInput(scanner, "Enter from where will arrive plane")
-	destination := service.GetInput(scanner, "Enter destination")
-	flightTimeStr := service.GetInput(scanner, "Enter flight time (format: YYYY-MM-DD HH:MM:SS)")
-
-	flightTime, err := service.ParseTime(flightTimeStr, "2006-01-02 15:04:05")
+	resp, err := http.Get(config.Backend_url + "/flight/get/" + id)
 	if err != nil {
 		return models.Flight{}, err
 	}
+	defer resp.Body.Close()
 
-	flightDuration, err := service.GetInt(scanner, "Enter flight duration")
+	if resp.StatusCode != http.StatusOK {
+		return models.Flight{}, fmt.Errorf("failed to get flight: %s", resp.Status)
+	}
+
+	var flight models.Flight
+	err = json.NewDecoder(resp.Body).Decode(&flight)
 	if err != nil {
-		return models.Flight{}, err
+		return models.Flight{}, nil
 	}
 
-	flight := models.Flight{
-		FromWhere:      fromWhere,
-		Destination:    destination,
-		FlightTime:     flightTime,
-		FlightDuration: flightDuration,
-	}
-
-	return PostFlight(flight)
+	return flight, nil
 }
 
-// /flights/update + body(json)
-// UpdateFlight updates the data of an existing flight by its UUID.
-// Returns the updated flight and an error if there was a problem.
 func CreateFlight() (models.Flight, error) {
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -102,11 +92,11 @@ func CreateFlight() (models.Flight, error) {
 	return flight, nil
 }
 
-// /flights/delete?id=...
+// /flights/delete/id
 // DeleteFlight removes a flight from the system by its ID.
 // Returns the deleted flight and an error if there was a problem.
 func DeleteFlight(id string) (models.Flight, error) {
-	req, err := http.NewRequest(http.MethodDelete, config.Backend_url+"/flights/delete?id="+id, nil)
+	req, err := http.NewRequest(http.MethodDelete, config.Backend_url+"/flights/delete/"+id, nil)
 	if err != nil {
 		return models.Flight{}, nil
 	}
@@ -138,7 +128,7 @@ func DeleteFlight(id string) (models.Flight, error) {
 // /flights/insert + body(json)
 // postFlight sends the new flight data to the server for addition.
 // Returns the added flight and an error if there was a problem.
-func PostFlight(flight models.Flight) (models.Flight, error) {
+func InsertFlight(flight models.Flight) (models.Flight, error) {
 	bs, err := json.Marshal(flight)
 	if err != nil {
 		fmt.Println("Error marshaling flight:", err)
@@ -175,7 +165,7 @@ func PostFlight(flight models.Flight) (models.Flight, error) {
 }
 
 // /flights/update + body(json)
-// updateFlight sends the updated flight data to the server.
+// UpdateFlight updates the data of an existing flight by its UUID.
 // Returns the updated flight and an error if there was a problem.
 func UpdateFlight(flight models.Flight) (models.Flight, error) {
 	bs, err := json.Marshal(flight)
