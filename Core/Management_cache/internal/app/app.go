@@ -3,7 +3,7 @@ package app
 import (
 	"net/http"
 
-	"github.com/chas3air/Airplanes-Co/Core/Cache/internal/routes"
+	"github.com/chas3air/Airplanes-Co/Core/Management_cache/internal/routes"
 	"github.com/gorilla/mux"
 )
 

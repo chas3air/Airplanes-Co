@@ -26,3 +26,4 @@ type Message struct {
 	Key   string    `json:"key"`       // The key under which the cache item will be stored.
 	Value CacheItem `json:"cacheItem"` // The CacheItem to be stored in the cache.
 }
+
