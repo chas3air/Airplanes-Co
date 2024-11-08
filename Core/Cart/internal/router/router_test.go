@@ -116,6 +116,7 @@ func TestDeleteTicketHandler(t *testing.T) {
 		ClassOfService: "Economy",
 	}
 	TicketsCart = append(TicketsCart, ticket)
+
 	log.Println("Generated ID:", generatedId.String())
 
 	// Создаем DELETE запрос с правильным ID

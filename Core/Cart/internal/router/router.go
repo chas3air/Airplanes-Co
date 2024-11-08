@@ -113,6 +113,7 @@ func DeleteTicketHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request: cannot get id from URL", http.StatusBadRequest)
 		return
 	}
+	log.Printf("Deleting ticket with ID: %s\n", id)
 
 	var deletedTicket models.Ticket
 	var newCart []models.Ticket
