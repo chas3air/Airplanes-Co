@@ -7,38 +7,38 @@ volumes:
   common_psql_ma:
 
 services:
-  # psql_db:
-  #   build:
-  #     context: "./psql"
-  #   container_name: psql_cont
-  #   ports:
-  #     - "5000:5432"
-  #   environment:
-  #     POSTGRES_PASSWORD: 123
-  #   networks:
-  #     - db
-  #   volumes:
-  #     - common_psql_ma:/var/lib/postgresql/data
+  psql_db:
+    build:
+      context: "./psql"
+    container_name: psql_cont
+    ports:
+      - "5000:5432"
+    environment:
+      POSTGRES_PASSWORD: 123
+    networks:
+      - db
+    volumes:
+      - common_psql_ma:/var/lib/postgresql/data
 
-  # dal_flights:
-  #   build:
-  #     context: ./Core/Dal_flights
-  #   container_name: dal_flights
-  #   depends_on:
-  #     - psql_db
-  #   networks:
-  #     - db
-  #   # ports:
-  #   #   - "74:12001"
-  #   environment:
-  #     TYPE_OF_DB: psql
-  #     PSQL_DB_USER: postgres
-  #     PSQL_DB_PASSWORD: 123
-  #     PSQL_DB_HOST: psql_cont
-  #     PSQL_DB_PORT: 5432
-  #     PSQL_DB_DBNAME: airplanesco
-  #     PSQL_TABLE_NAME: Flights
-  #     PSQL_LIMIT_RESPONSE_TIME: 10
+  dal_flights:
+    build:
+      context: ./Core/Dal_flights
+    container_name: dal_flights
+    depends_on:
+      - psql_db
+    networks:
+      - db
+    # ports:
+    #   - "74:12001"
+    environment:
+      TYPE_OF_DB: psql
+      PSQL_DB_USER: postgres
+      PSQL_DB_PASSWORD: 123
+      PSQL_DB_HOST: psql_cont
+      PSQL_DB_PORT: 5432
+      PSQL_DB_DBNAME: airplanesco
+      PSQL_TABLE_NAME: Flights
+      PSQL_LIMIT_RESPONSE_TIME: 10
 
   # dal_customers:
   #   build:
@@ -90,17 +90,17 @@ services:
   #     DAL_CUSTOMERS_URL: http://dal_customers:12000/postgres/customers
   #     LIMIT_RESPONSE_TIME: 10
 
-  # management_flights:
-  #   build:
-  #     context: ./Core/Management_flights
-  #   container_name: management_flights
-  #   networks:
-  #     - db
-  #   ports:
-  #     - "78:12006"
-  #   environment:
-  #     DAL_FLIGHTS_URL: http://dal_flights:12001/postgres/flights
-  #     LIMIT_RESPONSE_TIME: 10
+  management_flights:
+    build:
+      context: ./Core/Management_flights
+    container_name: management_flights
+    networks:
+      - db
+    # ports:
+    #   - "78:12006"
+    environment:
+      DAL_FLIGHTS_URL: http://dal_flights:12001/postgres/flights
+      LIMIT_RESPONSE_TIME: 10
 
   # management_tickets:
   #   build:
@@ -114,17 +114,17 @@ services:
   #     DAL_TICKETS_URL: http://dal_tickets:12002/postgres/tickets
   #     LIMIT_RESPONSE_TIME: 10
 
-  # catalog:
-  #   build:
-  #     context: ./Core/Flights_catalog
-  #   container_name: catalog
-  #   ports:
-  #     - "80:12004"
-  #   networks:
-  #     - db
-  #   environment:
-  #     MANAGEMENT_FLIGHTS_URL: http://management_flights:12006/management-flights/flights
-  #     LIMIT_RESPONSE_TIME: 5
+  catalog:
+    build:
+      context: ./Core/Flights_catalog
+    container_name: catalog
+    # ports:
+    #   - "80:12004"
+    networks:
+      - db
+    environment:
+      MANAGEMENT_FLIGHTS_URL: http://management_flights:12006/management-flights/flights
+      LIMIT_RESPONSE_TIME: 5
 
   # auth:
   #   build: 
@@ -184,10 +184,37 @@ services:
     build: 
       context: ./Core/management_cache
     container_name: management_cache
-    ports:
-      - "86:12011"
+    # ports:
+    #   - "86:12011"
     networks:
       - db
     environment:
       CACHE_URL: http://cache:12011/cache
       LIMIT_RESPONSE_TIME: 5
+
+  backend:
+    build: 
+      context: "./Core/Backend"
+    container_name: backend
+    # ports:
+    #   - "87:12013"
+    networks:
+      - db
+    environment:
+      MANAGEMENT_FLIGHTS_API_URL: http://management_flights:12006/management-flights/flights
+      MANAGEMENT_CACHE_API_URL: http://management_cache:12011/cache
+      LIMIT_RESPONSE_TIME: 5
+
+  cli:
+    build: 
+      context: ./Client/CLI
+    container_name: cli
+    ports:
+      - "90:12016"
+    networks:
+      - db
+    environment:
+      BACKEND_URL: http://backend:12013
+      LIMIT_RESPONSE_TIME: 5
+    stdin_open: true
+    tty: true

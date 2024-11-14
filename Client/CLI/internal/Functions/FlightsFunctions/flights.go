@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"text/tabwriter"
 
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/config"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
@@ -22,7 +23,7 @@ var limitTime = service.GetLimitTime()
 // GetAllFlights retrieves a list of all flights from the API.
 // Returns an array of flights and an error if the request fails.
 func GetAllFlights() ([]models.Flight, error) {
-	resp, err := http.Get(config.Backend_url + "/flight/get")
+	resp, err := http.Get(config.Backend_url + "/flights/get")
 	if err != nil {
 		return nil, err
 	}
@@ -32,9 +33,20 @@ func GetAllFlights() ([]models.Flight, error) {
 		return nil, fmt.Errorf("failed to get flights: %s", resp.Status)
 	}
 
-	var flights []models.Flight
-	err = json.NewDecoder(resp.Body).Decode(&flights)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Println("Cannot read response body:", err)
+		return nil, err
+	}
+
+	log.Println("Body response from backend is:", string(body))
+
+	bodyStr := string(body)
+
+	var flights []models.Flight
+	err = json.Unmarshal([]byte(bodyStr), &flights)
+	if err != nil {
+		log.Println("Cannot unmarshall response body to flight:", err)
 		return nil, err
 	}
 
@@ -42,10 +54,9 @@ func GetAllFlights() ([]models.Flight, error) {
 }
 
 func GetFlightById(id string) (models.Flight, error) {
-	log.Println("get flight by id")
-
-	resp, err := http.Get(config.Backend_url + "/flight/get/" + id)
+	resp, err := http.Get(config.Backend_url + "/flights/get/" + id)
 	if err != nil {
+		log.Println("Error:", err)
 		return models.Flight{}, err
 	}
 	defer resp.Body.Close()
@@ -57,7 +68,8 @@ func GetFlightById(id string) (models.Flight, error) {
 	var flight models.Flight
 	err = json.NewDecoder(resp.Body).Decode(&flight)
 	if err != nil {
-		return models.Flight{}, nil
+		log.Println(flight)
+		return models.Flight{}, err
 	}
 
 	return flight, nil
@@ -207,4 +219,24 @@ func UpdateFlight(flight models.Flight) (models.Flight, error) {
 	}
 
 	return outFlight, nil
+}
+
+func PrintFlights(flights []models.Flight) {
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+
+	fmt.Fprintln(w, "ID\tFrom\tDestination\tFlight Time\tDuration\tCosts")
+	fmt.Fprintln(w, "-----------------------------------------------------------")
+
+	for _, flight := range flights {
+		costs := fmt.Sprintf("%v", flight.FlightSeatsCosts)
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%s\n",
+			flight.Id,
+			flight.FromWhere,
+			flight.Destination,
+			flight.FlightTime.Format("2006-01-02 15:04:05"),
+			flight.FlightDuration,
+			costs)
+	}
+
+	w.Flush()
 }

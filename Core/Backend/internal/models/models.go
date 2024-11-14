@@ -20,10 +20,6 @@ type CarrotCache struct {
 	mu    sync.RWMutex         // Mutex to manage concurrent access to the cache.
 }
 
-func (cc *CarrotCache) GetCacheItems() map[string]CacheItem {
-	return cc.cache
-}
-
 // Message represents a structure for handling JSON requests to set cache items.
 // It contains a key for the cache and a CacheItem representing the value to be stored.
 type Message struct {

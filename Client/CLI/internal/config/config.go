@@ -1,7 +1,5 @@
 package config
 
-import "os"
-
 const DEFAULT_LIMIT_TIME = 5
 
 const (
@@ -12,4 +10,6 @@ const (
 	Guest          string = "guest"
 )
 
-var Backend_url = os.Getenv("BACKEND_URL")
+var Backend_url = "http://backend:12013"
+
+//os.Getenv("BACKEND_URL")

@@ -7,14 +7,16 @@ import (
 	"time"
 
 	customersfunctions "github.com/chas3air/Airplanes-Co/Client/CLI/internal/Functions/CustomersFunctions"
-	flightsfunctions "github.com/chas3air/Airplanes-Co/Client/CLI/internal/Functions/FlightsFunctions"
 	fai "github.com/chas3air/Airplanes-Co/Client/CLI/internal/Interfaces/FligthtAdminInterface"
+	guestinterface "github.com/chas3air/Airplanes-Co/Client/CLI/internal/Interfaces/GuestInterface"
+	ui "github.com/chas3air/Airplanes-Co/Client/CLI/internal/Interfaces/UserInterface"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/config"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
 )
 
 func Run() {
 	var current_customer models.Customer
+	current_customer.Role = config.FlightsAdmin
 
 	for {
 		switch current_customer.Role {
@@ -25,9 +27,20 @@ func Run() {
 		case config.GeneralAdmin:
 			generalAdminInterface(&current_customer)
 		case config.User:
-			customersInterface(&current_customer)
+			ui.UserInterface(&current_customer)
 		default:
-			guestInterface(&current_customer)
+			guestinterface.GuestInterface(&current_customer)
+		}
+
+		fmt.Println("Do you want to exit?(Y)")
+		var action string
+		fmt.Scanln(&action)
+
+		if action == "Y" {
+			fmt.Println("Exiting program.")
+			os.Exit(0)
+		} else {
+			fmt.Println("You are in yet")
 		}
 	}
 }
@@ -124,66 +137,6 @@ func generalAdminInterface(user *models.Customer) {
 		case "7":
 		case "8":
 		case "9":
-		default:
-			fmt.Println("Error number of item")
-		}
-	}
-}
-
-func customersInterface(user *models.Customer) {
-	scanner := bufio.NewScanner(os.Stdin)
-
-	for {
-		fmt.Println("Select an item")
-		fmt.Println("1. Show all flights")
-		fmt.Println("2. Buy ticket")
-		fmt.Println("3. Show cart")
-		fmt.Println("4. Pay for cart")
-		fmt.Println("5. Manage tickets")
-
-		fmt.Println("6. Logout")
-		_ = scanner.Scan()
-		choise := scanner.Text()
-
-		switch choise {
-		case "1":
-		case "2":
-		case "3":
-		case "4":
-		case "5":
-		case "6":
-		default:
-			fmt.Println("Error number of item")
-		}
-	}
-}
-
-func guestInterface(user *models.Customer) {
-	scanner := bufio.NewScanner(os.Stdin)
-
-	for {
-		fmt.Println("Select an item")
-		fmt.Println("1. Show all flights")
-		fmt.Println("2. Login")
-		fmt.Println("3. Logout")
-		_ = scanner.Scan()
-		choise := scanner.Text()
-
-		switch choise {
-		case "1":
-			flights, err := flightsfunctions.GetAllFlights()
-			if err != nil {
-				fmt.Println(err)
-				break
-			}
-
-			for _, v := range flights {
-				fmt.Println(v.String())
-			}
-
-			bufio.NewReader(os.Stdin).ReadString('\n')
-		case "2":
-		case "3":
 		default:
 			fmt.Println("Error number of item")
 		}

@@ -9,6 +9,7 @@ import (
 
 func Run() {
 	r := mux.NewRouter()
+	r.HandleFunc("/cache", routes.GetAllItemsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/cache/{key}", routes.GetItemHandler).Methods(http.MethodGet)
 	r.HandleFunc("/cache", routes.SetItemHandler).Methods(http.MethodPost)
 	r.HandleFunc("/cache/{key}", routes.DeleteItemHandler).Methods(http.MethodDelete)
