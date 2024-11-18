@@ -5,39 +5,18 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sync"
-	"time"
 
 	customersfunctions "github.com/chas3air/Airplanes-Co/Client/CLI/internal/Functions/CustomersFunctions"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
+	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/service"
+	"github.com/google/uuid"
 )
 
-func customersAdminInterface(user *models.Customer) {
+func CustomersAdminInterface(user *models.Customer) {
 	scanner := bufio.NewScanner(os.Stdin)
-	var localCustomers []models.Customer
-	var prepCustomerToInsert = make([]models.Customer, 0, 5)
-	var prepCustomerToUpdate = make([]models.Customer, 0, 5)
-	var prepIdCustomerToDelete = make([]string, 0, 5)
-	var err error
-	var mut sync.Mutex
-
-	localCustomers, err = customersfunctions.GetAllCustomers()
-	if err != nil {
-		fmt.Println("customers weren't loaded", err)
-		return
-	}
-
-	go func() {
-		for {
-			mut.Lock()
-			processPreparations(&prepCustomerToInsert, &prepCustomerToUpdate, &prepIdCustomerToDelete)
-			mut.Unlock()
-			time.Sleep(3 * time.Second)
-		}
-	}()
 
 	for {
-		clearConsole()
+		service.ClearConsole()
 		displayMenu()
 		_ = scanner.Scan()
 		choice := scanner.Text()
@@ -46,70 +25,118 @@ func customersAdminInterface(user *models.Customer) {
 		case "1":
 			fmt.Println("Get all customers")
 
-			for _, v := range localCustomers {
-				fmt.Println(v.String())
+			localCustomers, err := customersfunctions.GetAllCustomers()
+			if err != nil {
+				fmt.Println("Customers weren't loaded:", err)
+				bufio.NewReader(os.Stdin).ReadString('\n')
+				break
 			}
+
+			customersfunctions.PrintCustomersTable(localCustomers)
+			fmt.Println("Press Enter to continue...")
 			bufio.NewReader(os.Stdin).ReadString('\n')
 
 		case "2":
-			fmt.Println("Adding customer")
+			fmt.Println("Show customer by id")
+			id := service.GetInput(scanner, "Enter id")
+			customer, err := customersfunctions.GetCustomerById(id)
+			if err != nil {
+				fmt.Println("Cannot get customer by id")
+				bufio.NewReader(os.Stdin).ReadString('\n')
+				break
+			}
 
-			time.Sleep(200 * time.Millisecond)
+			customersfunctions.PrintCustomersTable([]models.Customer{customer})
+			fmt.Println("Press Enter to continue...")
+			bufio.NewReader(os.Stdin).ReadString('\n')
 
 		case "3":
-			fmt.Println("Update customers")
-			time.Sleep(200 * time.Millisecond)
+			fmt.Println("Adding customer")
+			customer, err := customersfunctions.CreateCustomer()
+			if err != nil {
+				fmt.Println("Cannot create customer")
+				break
+			}
+
+			customer, err = customersfunctions.InsertCustomer(customer)
+			if err != nil {
+				fmt.Println("Cannot insert customer")
+				break
+			}
+
+			customersfunctions.PrintCustomersTable([]models.Customer{customer})
+			fmt.Println("Press Enter to continue...")
+			bufio.NewReader(os.Stdin).ReadString('\n')
 
 		case "4":
-			fmt.Println("Deleting customer")
-			time.Sleep(200 * time.Millisecond)
+			fmt.Println("Update customers")
+
+			id := service.GetInput(scanner, "Enter id")
+
+			customer, err := customersfunctions.CreateCustomer()
+			if err != nil {
+				fmt.Println("Error creating customer")
+				break
+			}
+			parsedId, err := uuid.Parse(id)
+			if err != nil {
+				fmt.Println("Cannot parse string to uuid")
+				bufio.NewReader(os.Stdin).ReadString('\n')
+				break
+			}
+			customer.Id = parsedId
+
+			_, err = customersfunctions.UpdateCustomer(customer)
+			if err != nil {
+				log.Println("Cannot update customer with id:", id)
+				bufio.NewReader(os.Stdin).ReadString('\n')
+				break
+			}
+
+			fmt.Println(customer)
+			fmt.Println("Press Enter to continue...")
+			bufio.NewReader(os.Stdin).ReadString('\n')
 
 		case "5":
+			fmt.Println("Deleting customer")
+
+			id := service.GetInput(scanner, "Enter id")
+			customer, err := customersfunctions.DeleteCustomer(id)
+			if err != nil {
+				log.Println("Cannot delete customer")
+				bufio.NewReader(os.Stdin).ReadString('\n')
+				break
+			}
+
+			fmt.Println(customer)
+			log.Println("Press Enter to cintinue...")
+			bufio.NewReader(os.Stdin).ReadString('\n')
+
+		case "6":
 			fmt.Println("Logout")
-			time.Sleep(200 * time.Millisecond)
+
+			if err := service.Logout(); err != nil {
+				fmt.Println("Error loging out")
+				bufio.NewReader(os.Stdin).ReadString('\n')
+				break
+			}
+
+			*user = models.Customer{}
+			return
 
 		default:
 			fmt.Println("Error number of item")
-			time.Sleep(200 * time.Millisecond)
-
+			bufio.NewReader(os.Stdin).ReadString('\n')
 		}
 	}
-}
-
-func processPreparations(prepCustomerToInsert, prepCustomerToUpdate *[]models.Customer, prepIdCustomerToDelete *[]string) {
-	for _, v := range *prepCustomerToInsert {
-		if _, err := customersfunctions.PostCustomer(v); err != nil {
-			log.Println("Error posting flight:", err)
-		}
-	}
-
-	for _, v := range *prepCustomerToUpdate {
-		if _, err := customersfunctions.UpdateCustomer(v); err != nil {
-			log.Println("Error updating flight:", err)
-		}
-	}
-
-	for _, v := range *prepIdCustomerToDelete {
-		if _, err := customersfunctions.DeleteCustomer(v); err != nil {
-			log.Println("Error deleting flight:", err)
-		}
-	}
-
-	*prepCustomerToInsert = make([]models.Customer, 0, 5)
-	*prepCustomerToUpdate = make([]models.Customer, 0, 5)
-	*prepIdCustomerToDelete = make([]string, 0, 10)
 }
 
 func displayMenu() {
 	fmt.Println("Select an item")
 	fmt.Println("1. Get all customers")
-	fmt.Println("2. Add customer")
-	fmt.Println("3. Update customer")
-	fmt.Println("4. Delete customer")
-	fmt.Println("5. Logout")
-}
-
-func clearConsole() {
-	// Implement console clearing logic here, depending on your platform
-	// This can be done using ANSI codes or system commands
+	fmt.Println("2. Get customer by id")
+	fmt.Println("3. Add customer")
+	fmt.Println("4. Update customer")
+	fmt.Println("5. Delete customer")
+	fmt.Println("6. Logout")
 }

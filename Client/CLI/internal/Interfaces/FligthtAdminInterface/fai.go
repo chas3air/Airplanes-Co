@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"time"
 
 	flightsfunctions "github.com/chas3air/Airplanes-Co/Client/CLI/internal/Functions/FlightsFunctions"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
@@ -21,6 +20,7 @@ func FlightsAdminInterface(user *models.Customer) {
 		_ = scanner.Scan()
 		choice := scanner.Text()
 
+		//TODO: придобавлении нового элемента не выводит его, нужно исправить
 		switch choice {
 		case "1":
 			fmt.Println("Show all flights")
@@ -36,7 +36,7 @@ func FlightsAdminInterface(user *models.Customer) {
 			bufio.NewReader(os.Stdin).ReadString('\n')
 
 		case "2":
-			fmt.Println("Show flight")
+			fmt.Println("Show flight by id")
 			id := service.GetInput(scanner, "Enter id")
 			flight, err := flightsfunctions.GetFlightById(id)
 			if err != nil {
@@ -101,7 +101,9 @@ func FlightsAdminInterface(user *models.Customer) {
 			id := service.GetInput(scanner, "Enter id")
 			flight, err := flightsfunctions.DeleteFlight(id)
 			if err != nil {
-				fmt.Println("Cannot detere flight")
+				fmt.Println("Cannot detete flight")
+				bufio.NewReader(os.Stdin).ReadString('\n')
+				break
 			}
 
 			fmt.Println(flight)
@@ -118,9 +120,9 @@ func FlightsAdminInterface(user *models.Customer) {
 			return
 
 		default:
+			bufio.NewReader(os.Stdin).ReadString('\n')
 			fmt.Println("Error: invalid menu option")
 		}
-		time.Sleep(200 * time.Millisecond)
 	}
 }
 

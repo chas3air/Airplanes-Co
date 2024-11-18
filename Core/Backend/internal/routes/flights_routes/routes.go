@@ -134,7 +134,7 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 		Key: "flights:" + id,
 		Value: models.CacheItem{
 			Value:      string(body), // Используем body напрямую
-			Expiration: config.VALUE_EXPIRATION_TIME,
+			Expiration: 5,
 			SetedTime:  time.Now(),
 		},
 	}

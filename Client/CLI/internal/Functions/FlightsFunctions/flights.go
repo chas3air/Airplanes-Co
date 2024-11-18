@@ -14,7 +14,6 @@ import (
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/config"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/service"
-	"github.com/google/uuid"
 )
 
 var limitTime = service.GetLimitTime()
@@ -39,14 +38,11 @@ func GetAllFlights() ([]models.Flight, error) {
 		return nil, err
 	}
 
-	log.Println("Body response from backend is:", string(body))
-
 	bodyStr := string(body)
 
 	var flights []models.Flight
 	err = json.Unmarshal([]byte(bodyStr), &flights)
 	if err != nil {
-		log.Println("Cannot unmarshall response body to flight:", err)
 		return nil, err
 	}
 
@@ -68,7 +64,6 @@ func GetFlightById(id string) (models.Flight, error) {
 	var flight models.Flight
 	err = json.NewDecoder(resp.Body).Decode(&flight)
 	if err != nil {
-		log.Println(flight)
 		return models.Flight{}, err
 	}
 
@@ -78,7 +73,6 @@ func GetFlightById(id string) (models.Flight, error) {
 func CreateFlight() (models.Flight, error) {
 	scanner := bufio.NewScanner(os.Stdin)
 
-	id := uuid.New()
 	fromWhere := service.GetInput(scanner, "Enter from where will arrive plane")
 	destination := service.GetInput(scanner, "Enter destination")
 	flightTimeStr := service.GetInput(scanner, "Enter flight time (format: YYYY-MM-DD HH:MM:SS)")
@@ -94,11 +88,11 @@ func CreateFlight() (models.Flight, error) {
 	}
 
 	flight := models.Flight{
-		Id:             id,
-		FromWhere:      fromWhere,
-		Destination:    destination,
-		FlightTime:     flightTime,
-		FlightDuration: flightDuration,
+		FromWhere:        fromWhere,
+		Destination:      destination,
+		FlightTime:       flightTime,
+		FlightDuration:   flightDuration,
+		FlightSeatsCosts: make([]int, 0),
 	}
 
 	return flight, nil
@@ -110,7 +104,7 @@ func CreateFlight() (models.Flight, error) {
 func DeleteFlight(id string) (models.Flight, error) {
 	req, err := http.NewRequest(http.MethodDelete, config.Backend_url+"/flights/delete/"+id, nil)
 	if err != nil {
-		return models.Flight{}, nil
+		return models.Flight{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 

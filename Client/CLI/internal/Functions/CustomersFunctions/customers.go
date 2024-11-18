@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/config"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
@@ -37,6 +38,26 @@ func GetAllCustomers() ([]models.Customer, error) {
 	}
 
 	return customers, nil
+}
+
+func GetCustomerById(id string) (models.Customer, error) {
+	resp, err := http.Get(config.Backend_url + "customers/get/" + id)
+	if err != nil {
+		return models.Customer{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return models.Customer{}, fmt.Errorf("failed to get customer: %s", resp.Status)
+	}
+
+	var customer models.Customer
+	err = json.NewDecoder(resp.Body).Decode(&customer)
+	if err != nil {
+		return models.Customer{}, err
+	}
+
+	return customer, nil
 }
 
 // /customers/insert + body(json)
@@ -98,7 +119,7 @@ func DeleteCustomer(id string) (models.Customer, error) {
 // /customers/insert + body(json)
 // postCustomer sends the new customer data to the server for addition.
 // Returns the added customer and an error if there was a problem.
-func PostCustomer(customer models.Customer) (models.Customer, error) {
+func InsertCustomer(customer models.Customer) (models.Customer, error) {
 	bs, err := json.Marshal(customer)
 	if err != nil {
 		fmt.Println("Error marshaling customer:", err)
@@ -175,4 +196,14 @@ func UpdateCustomer(customer models.Customer) (models.Customer, error) {
 	}
 
 	return outCustomer, nil
+}
+
+func PrintCustomersTable(customers []models.Customer) {
+	fmt.Printf("| %-36s | %-10s | %-10s | %-10s | %-10s | %-10s |\n",
+		"ID", "Login", "Password", "Role", "Surname", "Name")
+	fmt.Println(strings.Repeat("-", 87)) // Разделитель
+
+	for _, customer := range customers {
+		customer.Display()
+	}
 }

@@ -19,3 +19,8 @@ func (c Customer) String() string {
 	return fmt.Sprintf("Customer ID: %s, Login: %s, Name: %s %s, Role: %s",
 		c.Id.String(), c.Login, c.Name, c.Surname, c.Role)
 }
+
+func (c Customer) Display() {
+	fmt.Printf("| %-36s | %-10s | %-10s | %-10s | %-10s | %-10s |\n",
+		c.Id, c.Login, c.Password, c.Role, c.Surname, c.Name)
+}
