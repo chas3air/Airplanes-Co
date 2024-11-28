@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -40,8 +41,11 @@ func GetAllCustomers() ([]models.Customer, error) {
 	return customers, nil
 }
 
+// /customers/get/id
+// GetCustomerById retrieves a customer by their ID from the backend service.
+// Returns the customer details or an error if the request fails or the customer is not found.
 func GetCustomerById(id string) (models.Customer, error) {
-	resp, err := http.Get(config.Backend_url + "customers/get/" + id)
+	resp, err := http.Get(config.Backend_url + "/customers/get/" + id)
 	if err != nil {
 		return models.Customer{}, err
 	}
@@ -57,62 +61,6 @@ func GetCustomerById(id string) (models.Customer, error) {
 		return models.Customer{}, err
 	}
 
-	return customer, nil
-}
-
-// /customers/insert + body(json)
-// AddCustomer prompts the user for data to create a new customer and adds it to the system.
-// Returns the added customer and an error if there was a problem.
-func CreateCustomer() (models.Customer, error) {
-	scanner := bufio.NewScanner(os.Stdin)
-
-	login := service.GetInput(scanner, "Enter login")
-	password := service.GetInput(scanner, "Enter password")
-	role := service.GetInput(scanner, "Enter role")
-	surname := service.GetInput(scanner, "Enter surname")
-	name := service.GetInput(scanner, "Enter name")
-
-	customer := models.Customer{
-		Login:    login,
-		Password: password,
-		Role:     role,
-		Surname:  surname,
-		Name:     name,
-	}
-
-	return customer, nil
-}
-
-// /customers/delete?id=...
-// DeleteCustomer removes a customer from the system by their ID.
-// Returns the deleted customer and an error if there was a problem.
-func DeleteCustomer(id string) (models.Customer, error) {
-	req, err := http.NewRequest(http.MethodDelete, config.Backend_url+"/customers/delete?id="+id, nil)
-	if err != nil {
-		return models.Customer{}, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{
-		Timeout: limitTime,
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return models.Customer{}, err
-	}
-	defer resp.Body.Close()
-
-	resp_body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return models.Customer{}, err
-	}
-
-	var customer models.Customer
-	err = json.Unmarshal(resp_body, &customer)
-	if err != nil {
-		return models.Customer{}, err
-	}
 	return customer, nil
 }
 
@@ -198,10 +146,120 @@ func UpdateCustomer(customer models.Customer) (models.Customer, error) {
 	return outCustomer, nil
 }
 
+// /customers/delete/id
+// DeleteCustomer removes a customer from the system by their ID.
+// Returns the deleted customer and an error if there was a problem.
+func DeleteCustomer(id string) (models.Customer, error) {
+	req, err := http.NewRequest(http.MethodDelete, config.Backend_url+"/customers/delete/"+id, nil)
+	if err != nil {
+		return models.Customer{}, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{
+		Timeout: limitTime,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return models.Customer{}, err
+	}
+	defer resp.Body.Close()
+
+	resp_body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return models.Customer{}, err
+	}
+
+	var customer models.Customer
+	err = json.Unmarshal(resp_body, &customer)
+	if err != nil {
+		return models.Customer{}, err
+	}
+	return customer, nil
+}
+
+func SignUpCustomer(user models.Customer) (models.Customer, error) {
+	client := &http.Client{
+		Timeout: limitTime,
+	}
+	user.Role = config.User
+
+	bs, err := json.Marshal(user)
+	if err != nil {
+		return models.Customer{}, err
+	}
+
+	resp, err := client.Post(config.Backend_url+"/sign-up", "application/json", bytes.NewBuffer(bs))
+	if err != nil {
+		return models.Customer{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return models.Customer{}, fmt.Errorf("login failed: status code %d", resp.StatusCode)
+	}
+
+	var customer models.Customer
+	err = json.NewDecoder(resp.Body).Decode(&customer)
+	if err != nil {
+		return models.Customer{}, err
+	}
+
+	return customer, nil
+}
+
+func SignInCustomer(login, password string) (models.Customer, error) {
+	client := &http.Client{
+		Timeout: limitTime,
+	}
+
+	url := fmt.Sprintf(config.Backend_url+"/sign-in?login=%s&password=%s", login, password)
+	log.Println("Url string:", url)
+	resp, err := client.Get(url)
+	if err != nil {
+		log.Println("Error:", err)
+		return models.Customer{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return models.Customer{}, fmt.Errorf("response code: %v", resp.StatusCode)
+	}
+
+	var customer models.Customer
+	err = json.NewDecoder(resp.Body).Decode(&customer)
+	if err != nil {
+		return models.Customer{}, err
+	}
+
+	return customer, nil
+}
+
+func CreateCustomer() (models.Customer, error) {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	login := service.GetInput(scanner, "Enter login")
+	password := service.GetInput(scanner, "Enter password")
+	role := service.GetInput(scanner, "Enter role")
+	surname := service.GetInput(scanner, "Enter surname")
+	name := service.GetInput(scanner, "Enter name")
+
+	customer := models.Customer{
+		Login:    login,
+		Password: password,
+		Role:     role,
+		Surname:  surname,
+		Name:     name,
+	}
+
+	return customer, nil
+}
+
 func PrintCustomersTable(customers []models.Customer) {
 	fmt.Printf("| %-36s | %-10s | %-10s | %-10s | %-10s | %-10s |\n",
 		"ID", "Login", "Password", "Role", "Surname", "Name")
-	fmt.Println(strings.Repeat("-", 87)) // Разделитель
+	fmt.Println(strings.Repeat("-", 87))
 
 	for _, customer := range customers {
 		customer.Display()

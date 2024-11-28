@@ -15,7 +15,6 @@ import (
 
 func Run() {
 	var current_customer models.Customer
-	current_customer.Role = config.FlightsAdmin
 
 	for {
 		switch current_customer.Role {

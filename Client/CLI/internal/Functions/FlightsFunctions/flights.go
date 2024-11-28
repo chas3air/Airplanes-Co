@@ -9,7 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"text/tabwriter"
+	"strings"
 
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/config"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
@@ -32,16 +32,8 @@ func GetAllFlights() ([]models.Flight, error) {
 		return nil, fmt.Errorf("failed to get flights: %s", resp.Status)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Cannot read response body:", err)
-		return nil, err
-	}
-
-	bodyStr := string(body)
-
 	var flights []models.Flight
-	err = json.Unmarshal([]byte(bodyStr), &flights)
+	err = json.NewDecoder(resp.Body).Decode(&flights)
 	if err != nil {
 		return nil, err
 	}
@@ -49,6 +41,9 @@ func GetAllFlights() ([]models.Flight, error) {
 	return flights, nil
 }
 
+// /flihgts/get/id
+// GetFlightById retrieves a flight by its ID from the backend service.
+// Returns the flight details or an error if the request fails or the flight is not found.
 func GetFlightById(id string) (models.Flight, error) {
 	resp, err := http.Get(config.Backend_url + "/flights/get/" + id)
 	if err != nil {
@@ -67,67 +62,6 @@ func GetFlightById(id string) (models.Flight, error) {
 		return models.Flight{}, err
 	}
 
-	return flight, nil
-}
-
-func CreateFlight() (models.Flight, error) {
-	scanner := bufio.NewScanner(os.Stdin)
-
-	fromWhere := service.GetInput(scanner, "Enter from where will arrive plane")
-	destination := service.GetInput(scanner, "Enter destination")
-	flightTimeStr := service.GetInput(scanner, "Enter flight time (format: YYYY-MM-DD HH:MM:SS)")
-
-	flightTime, err := service.ParseTime(flightTimeStr, "2006-01-02 15:04:05")
-	if err != nil {
-		return models.Flight{}, err
-	}
-
-	flightDuration, err := service.GetInt(scanner, "Enter flight duration")
-	if err != nil {
-		return models.Flight{}, err
-	}
-
-	flight := models.Flight{
-		FromWhere:        fromWhere,
-		Destination:      destination,
-		FlightTime:       flightTime,
-		FlightDuration:   flightDuration,
-		FlightSeatsCosts: make([]int, 0),
-	}
-
-	return flight, nil
-}
-
-// /flights/delete/id
-// DeleteFlight removes a flight from the system by its ID.
-// Returns the deleted flight and an error if there was a problem.
-func DeleteFlight(id string) (models.Flight, error) {
-	req, err := http.NewRequest(http.MethodDelete, config.Backend_url+"/flights/delete/"+id, nil)
-	if err != nil {
-		return models.Flight{}, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{
-		Timeout: limitTime,
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return models.Flight{}, err
-	}
-	defer resp.Body.Close()
-
-	resp_body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return models.Flight{}, err
-	}
-
-	var flight models.Flight
-	err = json.Unmarshal(resp_body, &flight)
-	if err != nil {
-		return models.Flight{}, err
-	}
 	return flight, nil
 }
 
@@ -215,22 +149,125 @@ func UpdateFlight(flight models.Flight) (models.Flight, error) {
 	return outFlight, nil
 }
 
-func PrintFlights(flights []models.Flight) {
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+// /flights/delete/id
+// DeleteFlight removes a flight from the system by its ID.
+// Returns the deleted flight and an error if there was a problem.
+func DeleteFlight(id string) (models.Flight, error) {
+	req, err := http.NewRequest(http.MethodDelete, config.Backend_url+"/flights/delete/"+id, nil)
+	if err != nil {
+		return models.Flight{}, err
+	}
+	req.Header.Set("Content-Type", "application/json")
 
-	fmt.Fprintln(w, "ID\tFrom\tDestination\tFlight Time\tDuration\tCosts")
-	fmt.Fprintln(w, "-----------------------------------------------------------")
-
-	for _, flight := range flights {
-		costs := fmt.Sprintf("%v", flight.FlightSeatsCosts)
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\t%s\n",
-			flight.Id,
-			flight.FromWhere,
-			flight.Destination,
-			flight.FlightTime.Format("2006-01-02 15:04:05"),
-			flight.FlightDuration,
-			costs)
+	client := &http.Client{
+		Timeout: limitTime,
 	}
 
-	w.Flush()
+	resp, err := client.Do(req)
+	if err != nil {
+		return models.Flight{}, err
+	}
+	defer resp.Body.Close()
+
+	resp_body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return models.Flight{}, err
+	}
+
+	var flight models.Flight
+	err = json.Unmarshal(resp_body, &flight)
+	if err != nil {
+		return models.Flight{}, err
+	}
+	return flight, nil
+}
+
+func PrintFlights(flights []models.Flight, exclude ...string) {
+	excludeMap := make(map[string]struct{})
+	for _, col := range exclude {
+		excludeMap[col] = struct{}{}
+	}
+
+	headersNames := [6]string{"ID", "From", "Destination", "FlightTime", "Duration", "Costs"}
+	headersWidth := [6]int{36, 15, 15, 19, 15, 17}
+
+	counter := 0
+	for _, header := range headersNames {
+		fmt.Printf("| %-*s ", headersWidth[counter], header)
+		counter++
+	}
+	fmt.Println("|")
+	fmt.Println(strings.Repeat("-", 136))
+
+	for _, flight := range flights {
+		if _, ok := excludeMap["ID"]; ok {
+			fmt.Printf("| %-36s ", "None")
+		} else {
+			fmt.Printf("| %-36s ", flight.Id)
+		}
+
+		if _, ok := excludeMap["From"]; ok {
+			fmt.Printf("| %-15s ", "None")
+		} else {
+			fmt.Printf("| %-15s ", flight.FromWhere)
+		}
+
+		if _, ok := excludeMap["Destination"]; ok {
+			fmt.Printf("| %-15s ", "None")
+		} else {
+			fmt.Printf("| %-15s ", flight.Destination)
+		}
+
+		if _, ok := excludeMap["FlightTime"]; ok {
+			fmt.Printf("| %-19s ", "None")
+		} else {
+			flightTime := flight.FlightTime.Format("2006-01-02 15:04:05")
+			fmt.Printf("| %-19s ", flightTime)
+		}
+
+		if _, ok := excludeMap["Duration"]; ok {
+			fmt.Printf("| %-15s ", "None")
+		} else {
+			fmt.Printf("| %-15d ", flight.FlightDuration)
+		}
+
+		if _, ok := excludeMap["Costs"]; ok {
+			fmt.Printf("| %-17s ", "None")
+		} else {
+			costs := fmt.Sprintf("%v", flight.FlightSeatsCosts)
+			fmt.Printf("| %-17s ", costs)
+		}
+
+		fmt.Println("|")
+	}
+
+	fmt.Println(strings.Repeat("-", 133))
+}
+
+func CreateFlight() (models.Flight, error) {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	fromWhere := service.GetInput(scanner, "Enter from where will arrive plane")
+	destination := service.GetInput(scanner, "Enter destination")
+	flightTimeStr := service.GetInput(scanner, "Enter flight time (format: YYYY-MM-DD HH:MM:SS)")
+
+	flightTime, err := service.ParseTime(flightTimeStr, "2006-01-02 15:04:05")
+	if err != nil {
+		return models.Flight{}, err
+	}
+
+	flightDuration, err := service.GetInt(scanner, "Enter flight duration")
+	if err != nil {
+		return models.Flight{}, err
+	}
+
+	flight := models.Flight{
+		FromWhere:        fromWhere,
+		Destination:      destination,
+		FlightTime:       flightTime,
+		FlightDuration:   flightDuration,
+		FlightSeatsCosts: make([]int, 0),
+	}
+
+	return flight, nil
 }

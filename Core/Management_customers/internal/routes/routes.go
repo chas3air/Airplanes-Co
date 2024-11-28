@@ -194,7 +194,7 @@ func DeleteCustomerHandler(w http.ResponseWriter, r *http.Request) {
 
 	id_s := mux.Vars(r)["id"]
 
-	req, err := http.NewRequest(http.MethodDelete, database_url+"/"+id_s+"/", nil)
+	req, err := http.NewRequest(http.MethodDelete, database_url+"/"+id_s, nil)
 	if err != nil {
 		log.Println("Error creating request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -36,7 +36,7 @@ func GeneralAdminInterface(user *models.Customer) {
 			bufio.NewReader(os.Stdin).ReadString('\n')
 
 		case "2":
-			fmt.Println("Show flight")
+			fmt.Println("Show flight by id")
 			id := service.GetInput(scanner, "Enter id")
 			flight, err := flightsfunctions.GetFlightById(id)
 			if err != nil {
@@ -118,16 +118,23 @@ func GeneralAdminInterface(user *models.Customer) {
 		case "12":
 		case "13":
 		case "14":
+		case "15":
+		case "16":
 			fmt.Println("Logout")
 			if err := service.Logout(); err != nil {
 				fmt.Println("Error logging out:", err)
+				bufio.NewReader(os.Stdin).ReadString('\n')
 				break
 			}
 			*user = models.Customer{}
+
+			fmt.Println("Logout goes successfully")
+			bufio.NewReader(os.Stdin).ReadString('\n')
 			return
 
 		default:
 			fmt.Println("Error: invalid menu option")
+			bufio.NewReader(os.Stdin).ReadString('\n')
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
@@ -142,14 +149,16 @@ func displayMenu() {
 	fmt.Println("5. Delete flight")
 
 	fmt.Println("6. Get all customers")
-	fmt.Println("7. Add customer")
-	fmt.Println("8. Update customer")
-	fmt.Println("9. Delete customer")
+	fmt.Println("7. Get customersby id")
+	fmt.Println("8. Add customer")
+	fmt.Println("9. Update customer")
+	fmt.Println("10. Delete customer")
 
-	fmt.Println("10. Get all tickets")
-	fmt.Println("11. Add tickets")
-	fmt.Println("12. Update tickets")
-	fmt.Println("13. Delete tickets")
+	fmt.Println("11. Get all tickets")
+	fmt.Println("12. Get tickets by id")
+	fmt.Println("13. Add tickets")
+	fmt.Println("14. Update tickets")
+	fmt.Println("15. Delete tickets")
 
-	fmt.Println("14. Logout")
+	fmt.Println("16. Logout")
 }

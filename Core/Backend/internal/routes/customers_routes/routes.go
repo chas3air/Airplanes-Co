@@ -1,8 +1,7 @@
-package flights_routes
+package customers_routes
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -22,10 +21,10 @@ var httpClient = &http.Client{
 	Timeout: limitTime,
 }
 
-func GetFlightsHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Get flights backend process...")
+func GetCustomersHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Get customers backend process...")
 
-	resp, err := httpClient.Get(config.Management_cache_api_url + "/" + config.KEY_FOR_FLIGHTS)
+	resp, err := httpClient.Get(config.Management_cache_api_url + "/" + config.KEY_FOR_CUSTOMERS)
 	if err != nil {
 		handleError(w, err)
 		return
@@ -41,18 +40,18 @@ func GetFlightsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Println("backend send to client:", string(body))
+		log.Println("backend send to client", string(body))
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(resp.StatusCode)
 		w.Write(body)
-		log.Println("Successfully fetched flights from cache.")
+		log.Println("Successfully fetched customers from cache.")
 		return
 	}
 
 	log.Println("Cache is not used")
 
-	resp, err = httpClient.Get(config.Management_flights_api_url)
+	resp, err = httpClient.Get(config.Management_customers_api_url)
 	if err != nil {
 		log.Println("Error:", err)
 		handleError(w, err)
@@ -68,7 +67,7 @@ func GetFlightsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	message := models.Message{
-		Key: config.KEY_FOR_FLIGHTS,
+		Key: config.KEY_FOR_CUSTOMERS,
 		Value: models.CacheItem{
 			Value:      string(body),
 			Expiration: config.VALUE_EXPIRATION_TIME,
@@ -76,16 +75,16 @@ func GetFlightsHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	saveToCache(message)
+	service.SaveToCache(message)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
-	log.Println("Successfully fetched all flights from management service.")
+	log.Println("Successfully fetched all customers from management service.")
 }
 
-func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Get flight by id backend process...")
+func GetCustomerByIdHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Get customer by id backend process...")
 
 	id, ok := mux.Vars(r)["id"]
 	if !ok {
@@ -94,8 +93,8 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	escapedID := url.PathEscape(config.KEY_FOR_FLIGHTS + ":" + id)
-	rawURL := config.Management_cache_api_url + "/" + escapedID
+	escapeID := url.PathEscape(config.KEY_FOR_CUSTOMERS + ":" + id)
+	rawURL := config.Management_cache_api_url + "/" + escapeID
 	resp, err := httpClient.Get(rawURL)
 	if err != nil {
 		handleError(w, err)
@@ -114,11 +113,11 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(resp.StatusCode)
 		w.Write(body)
-		log.Println("Successfully fetched flight by id from cache.")
+		log.Println("Successfully fetched customer by id from cache.")
 		return
 	}
 
-	resp, err = httpClient.Get(config.Management_flights_api_url + "/" + id)
+	resp, err = httpClient.Get(config.Management_customers_api_url + "/" + id + "/")
 	if err != nil {
 		handleError(w, err)
 		return
@@ -128,12 +127,12 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println("Error:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	message := models.Message{
-		Key: config.KEY_FOR_FLIGHTS + ":" + id,
+		Key: config.KEY_FOR_CUSTOMERS + ":" + id,
 		Value: models.CacheItem{
 			Value:      string(body),
 			Expiration: 5,
@@ -141,16 +140,16 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	saveToCache(message)
+	service.SaveToCache(message)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
-	log.Println("Successfully fetched flight by id:", id)
+	log.Println("Successfully fetched customer by id:", id)
 }
 
-func InsertFlightHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Insert flight backend process...")
+func InsertCustomerHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Insert customer backend process...")
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -160,7 +159,7 @@ func InsertFlightHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	resp, err := httpClient.Post(config.Management_flights_api_url, "application/json", bytes.NewBuffer(body))
+	resp, err := httpClient.Post(config.Management_customers_api_url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		handleError(w, err)
 		return
@@ -177,13 +176,26 @@ func InsertFlightHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(bs)
-	log.Println("Successfully inserted flight.")
+	log.Println("Successfully inserted customer.")
 }
 
-func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Update flight via management-flights")
+func UpdateCustomerHandler(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "Не реализовано", http.StatusNotImplemented)
+}
 
-	req, err := http.NewRequest(http.MethodPatch, config.Management_flights_api_url, r.Body)
+func DeleteCustomerHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Delete customer backend process...")
+
+	id, ok := mux.Vars(r)["id"]
+	if !ok {
+		log.Println("Bad request: cannot get id")
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	escapeID := url.PathEscape(id)
+	rawURL := config.Management_customers_api_url + "/" + escapeID
+	req, err := http.NewRequest(http.MethodDelete, rawURL, nil)
 	if err != nil {
 		log.Println("Cannot create request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -205,7 +217,7 @@ func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Bad request: cannot read response body")
+		log.Println("Bad response: cannot read response body")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -213,34 +225,25 @@ func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
-	log.Println("Successfully updated flight.")
+	log.Println("Successfully deleted customer.")
 }
 
-func DeleteFlightHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Delete flight backend process...")
+func SignUpHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Sign-up customer backend process...")
 
-	id, ok := mux.Vars(r)["id"]
-	if !ok {
-		log.Println("Bad request: cannot get id")
-		http.Error(w, "Bad request: cannot read id", http.StatusBadRequest)
-		return
-	}
-
-	escapedID := url.PathEscape(id)
-	rawURL := config.Management_flights_api_url + "/" + escapedID
-	req, err := http.NewRequest(http.MethodDelete, rawURL, nil)
+	resp, err := httpClient.Post(config.Auth_api_url+"/auth/signup", "application/json", r.Body)
 	if err != nil {
-		log.Println("Cannot create request")
+		log.Println("Error:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer resp.Body.Close()
 
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		handleError(w, err)
+	if resp.StatusCode != http.StatusOK {
+		log.Println("Response code:", resp.StatusCode)
+		http.Error(w, fmt.Errorf("response code: %v", resp.StatusCode).Error(), resp.StatusCode)
 		return
 	}
-	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -252,30 +255,43 @@ func DeleteFlightHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
-	log.Println("Successfully deleted flight.")
+	log.Println("Successfully deleted customer.")
 }
 
-// saveToCache saves a message to the cache in a separate goroutine.
-func saveToCache(message models.Message) {
-	messageJSON, err := json.Marshal(message)
-	if err != nil {
-		log.Println("Error marshaling JSON:", err)
-		return
-	}
+func SignInHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Sign in customer backend process...")
 
-	resp, err := http.Post(config.Management_cache_api_url, "application/json", bytes.NewBuffer(messageJSON))
+	r.ParseForm()
+	login := r.Form.Get("login")
+	password := r.Form.Get("password")
+	log.Println("Received login and password from url:", login, "and", password)
+
+	url := fmt.Sprintf("%s/auth/signin?login=%s&password=%s", config.Auth_api_url, login, password)
+	resp, err := httpClient.Get(url)
 	if err != nil {
-		log.Println("Error posting to cache:", err)
+		log.Println("Error:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
+	log.Println("Response code:", resp.StatusCode)
 
 	if resp.StatusCode != http.StatusOK {
-		log.Println("Error posting to cache, response code:", resp.StatusCode)
+		http.Error(w, fmt.Errorf("response code: %v", resp.StatusCode).Error(), resp.StatusCode)
 		return
 	}
 
-	log.Println("Element successfully set.")
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Error:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
+	w.Write(body)
+	log.Println("Successfully sign in")
 }
 
 func handleError(w http.ResponseWriter, err error) {
@@ -284,6 +300,6 @@ func handleError(w http.ResponseWriter, err error) {
 		http.Error(w, "Request timed out", http.StatusGatewayTimeout)
 	} else {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }

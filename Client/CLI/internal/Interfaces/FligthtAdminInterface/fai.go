@@ -20,13 +20,13 @@ func FlightsAdminInterface(user *models.Customer) {
 		_ = scanner.Scan()
 		choice := scanner.Text()
 
-		//TODO: придобавлении нового элемента не выводит его, нужно исправить
 		switch choice {
 		case "1":
 			fmt.Println("Show all flights")
 			localFlights, err := flightsfunctions.GetAllFlights()
 			if err != nil {
 				fmt.Println("Flights weren't loaded:", err)
+				fmt.Println("Press Enter to continue...")
 				bufio.NewReader(os.Stdin).ReadString('\n')
 				break
 			}

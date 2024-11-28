@@ -15,7 +15,7 @@ func UserInterface(user *models.Customer) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
-		clearConsole()
+		service.ClearConsole()
 		displayMenu()
 		_ = scanner.Scan()
 		choice := scanner.Text()
@@ -30,7 +30,7 @@ func UserInterface(user *models.Customer) {
 				break
 			}
 
-			displayFlights(localFlights)
+			flightsfunctions.PrintFlights(localFlights)
 			fmt.Println("Press Enter to continue...")
 			bufio.NewReader(os.Stdin).ReadString('\n')
 
@@ -54,8 +54,6 @@ func UserInterface(user *models.Customer) {
 	}
 }
 
-func clearConsole() {}
-
 func displayMenu() {
 	fmt.Println("Select an item")
 	fmt.Println("1. Show all flights")
@@ -64,11 +62,4 @@ func displayMenu() {
 	fmt.Println("4. Pay for cart")
 	fmt.Println("5. Manage tickets")
 	fmt.Println("6. Logout")
-}
-
-func displayFlights(flights []models.Flight) {
-	fmt.Println("Current Flights:")
-	for i, flight := range flights {
-		fmt.Printf("%d: %s\n", i+1, flight.String())
-	}
 }

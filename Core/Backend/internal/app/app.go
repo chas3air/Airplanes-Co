@@ -3,6 +3,7 @@ package app
 import (
 	"net/http"
 
+	"github.com/chas3air/Airplanes-Co/Core/Backend/internal/routes/customers_routes"
 	"github.com/chas3air/Airplanes-Co/Core/Backend/internal/routes/flights_routes"
 	"github.com/gorilla/mux"
 )
@@ -17,6 +18,15 @@ func Run() {
 	r.HandleFunc("/flights/delete/{id}", flights_routes.DeleteFlightHandler).Methods(http.MethodDelete)
 
 	r.HandleFunc("/catalog/flights", flights_routes.GetFlightsHandler).Methods(http.MethodGet)
+
+	r.HandleFunc("/customers/get", customers_routes.GetCustomersHandler).Methods(http.MethodGet)
+	r.HandleFunc("/customers/get/{id}", customers_routes.GetCustomerByIdHandler).Methods(http.MethodGet)
+	r.HandleFunc("/customers/insert", customers_routes.InsertCustomerHandler).Methods(http.MethodPost)
+	r.HandleFunc("/customers/update", customers_routes.UpdateCustomerHandler).Methods(http.MethodPatch)
+	r.HandleFunc("/customers/delete/{id}", customers_routes.DeleteCustomerHandler).Methods(http.MethodDelete)
+
+	r.HandleFunc("/sign-up", customers_routes.SignUpHandler).Methods(http.MethodPost)
+	r.HandleFunc("/sign-in", customers_routes.SignInHandler).Methods(http.MethodGet)
 
 	http.ListenAndServe(":12013", r)
 }

@@ -1,15 +1,26 @@
-FROM golang
+# Set the Go version as an argument
+ARG GO_VERSION=latest
+FROM golang:${GO_VERSION} AS build
 
-WORKDIR /app
+WORKDIR /src
 
 COPY go.mod go.sum ./
-
 RUN go mod download
 
 COPY . .
 
-RUN go build -o dal_customers ./cmd/app
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o /bin/dal_customers ./cmd/app
+
+FROM alpine:latest AS final
+
+RUN apk --no-cache add ca-certificates tzdata
+
+COPY --from=build /bin/dal_customers /bin/
+
+RUN adduser -D appuser
+USER appuser
 
 EXPOSE 12000
 
-CMD ["./dal_customers"]
+ENTRYPOINT ["/bin/dal_customers"]

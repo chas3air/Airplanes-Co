@@ -21,6 +21,6 @@ COPY --from=build /bin/flights_catalog /bin/
 RUN adduser -D appuser
 USER appuser
 
-EXPOSE 12001
+EXPOSE 12004
 
 ENTRYPOINT ["/bin/flights_catalog"]

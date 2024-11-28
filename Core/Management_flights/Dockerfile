@@ -21,6 +21,6 @@ COPY --from=build /bin/management_flights /bin/
 RUN adduser -D appuser
 USER appuser
 
-EXPOSE 12016
+EXPOSE 12006
 
 ENTRYPOINT ["/bin/management_flights"]

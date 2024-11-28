@@ -2,7 +2,7 @@ package storage
 
 import "context"
 
-//TODO: переделать на дженерики
+//TODO: переделать на дженерики (опционально)
 
 type DBRepository interface {
 	GetAll(context.Context) (any, error)

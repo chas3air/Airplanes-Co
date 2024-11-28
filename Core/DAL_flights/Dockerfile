@@ -21,6 +21,6 @@ COPY --from=build /bin/dal_flights /bin/
 RUN adduser -D appuser
 USER appuser
 
-EXPOSE 12016
+EXPOSE 12001
 
 ENTRYPOINT ["/bin/dal_flights"]

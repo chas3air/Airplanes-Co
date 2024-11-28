@@ -58,6 +58,8 @@ func CustomersAdminInterface(user *models.Customer) {
 				break
 			}
 
+			log.Println("Created customer:", customer.String())
+
 			customer, err = customersfunctions.InsertCustomer(customer)
 			if err != nil {
 				fmt.Println("Cannot insert customer")
