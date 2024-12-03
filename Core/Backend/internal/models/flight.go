@@ -17,6 +17,6 @@ type Flight struct {
 }
 
 func (f Flight) String() string {
-	return fmt.Sprintf("Flight ID: %s, From: %s, To: %s, Departure: %s, Duration: %d minutes, Flights cost seats: %v",
+	return fmt.Sprintf("Flight ID: %s, From: %s, To: %s, Departure: %s, Duration: %d minutes, Flighys cost seats: %v",
 		f.Id.String(), f.FromWhere, f.Destination, f.FlightTime.Format(time.RFC3339), f.FlightDuration, f.FlightSeatsCosts)
 }

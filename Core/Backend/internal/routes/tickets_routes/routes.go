@@ -1,7 +1,8 @@
-package flights_routes
+package tickets_routes
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -21,10 +22,10 @@ var httpClient = &http.Client{
 	Timeout: limitTime,
 }
 
-func GetFlightsHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Get flights backend process...")
+func GetTicketHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Get tickets backend process...")
 
-	resp, err := httpClient.Get(config.Management_cache_api_url + "/" + config.KEY_FOR_FLIGHTS)
+	resp, err := httpClient.Get(config.Management_cache_api_url + "/" + config.KEY_FOR_TICKETS)
 	if err != nil {
 		handleError(w, err)
 		return
@@ -40,18 +41,18 @@ func GetFlightsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Println("backend send to client:", string(body))
+		log.Println("backend sent to client:", string(body))
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(resp.StatusCode)
 		w.Write(body)
-		log.Println("Successfully fetched flights from cache.")
+		log.Println("Successfully fetched tickets from cache.")
 		return
 	}
 
 	log.Println("Cache is not used")
 
-	resp, err = httpClient.Get(config.Management_flights_api_url)
+	resp, err = httpClient.Get(config.Management_tickets_api_url)
 	if err != nil {
 		log.Println("Error:", err)
 		handleError(w, err)
@@ -67,7 +68,7 @@ func GetFlightsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	message := models.Message{
-		Key: config.KEY_FOR_FLIGHTS,
+		Key: config.KEY_FOR_TICKETS,
 		Value: models.CacheItem{
 			Value:      string(body),
 			Expiration: config.VALUE_EXPIRATION_TIME,
@@ -80,11 +81,11 @@ func GetFlightsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
-	log.Println("Successfully fetched all flights from management service.")
+	log.Println("Successfully fetched all tickets from management service.")
 }
 
-func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Get flight by id backend process...")
+func GetTicketByIdHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Get ticket by id backend process...")
 
 	id, ok := mux.Vars(r)["id"]
 	if !ok {
@@ -92,8 +93,7 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
-
-	escapedID := url.PathEscape(config.KEY_FOR_FLIGHTS + ":" + id)
+	escapedID := url.PathEscape(config.KEY_FOR_TICKETS + ":" + id)
 	rawURL := config.Management_cache_api_url + "/" + escapedID
 	resp, err := httpClient.Get(rawURL)
 	if err != nil {
@@ -113,11 +113,10 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(resp.StatusCode)
 		w.Write(body)
-		log.Println("Successfully fetched flight by id from cache.")
-		return
+		log.Println("Successfully fetched ticket by id from cache.")
 	}
 
-	resp, err = httpClient.Get(config.Management_flights_api_url + "/" + id)
+	resp, err = httpClient.Get(config.Management_tickets_api_url + "/" + id)
 	if err != nil {
 		handleError(w, err)
 		return
@@ -127,28 +126,29 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Println("Error:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	message := models.Message{
-		Key: config.KEY_FOR_FLIGHTS + ":" + id,
+		Key: config.KEY_FOR_TICKETS,
 		Value: models.CacheItem{
 			Value:      string(body),
-			Expiration: 5,
+			Expiration: config.VALUE_EXPIRATION_TIME,
 			SetedTime:  time.Now(),
 		},
 	}
+
 	service.SaveToCache(message)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
-	log.Println("Successfully fetched flight by id:", id)
+	log.Println("Successfully fetched ticket by id from cache.")
 }
 
-func InsertFlightHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Insert flight backend process...")
+func InsertTicketHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Insert ticket backend process...")
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -158,9 +158,9 @@ func InsertFlightHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	resp, err := httpClient.Post(config.Management_flights_api_url, "application/json", bytes.NewBuffer(body))
+	resp, err := httpClient.Post(config.Management_tickets_api_url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		log.Println("Cannot do post request to management flights")
+		log.Println("Cannot do post request to management tickets")
 		handleError(w, err)
 		return
 	}
@@ -176,13 +176,15 @@ func InsertFlightHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(bs)
-	log.Println("Successfully inserted flight.")
+	log.Println("Successfully inserted ticket.")
+
+	go sendtoCache(body)
 }
 
-func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Update flight backend process...")
+func UpdateTicketHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Update ticket backend process...")
 
-	req, err := http.NewRequest(http.MethodPatch, config.Management_flights_api_url, r.Body)
+	req, err := http.NewRequest(http.MethodPatch, config.Management_tickets_api_url, r.Body)
 	if err != nil {
 		log.Println("Cannot create request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -196,7 +198,7 @@ func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode/100 == 4 {
 		log.Println("Response code:", resp.StatusCode)
 		http.Error(w, fmt.Errorf("response code: %v", resp.StatusCode).Error(), resp.StatusCode)
 		return
@@ -212,21 +214,23 @@ func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
-	log.Println("Successfully updated flight.")
+	log.Println("Successfully updated ticket")
+
+	go sendtoCache(body)
 }
 
-func DeleteFlightHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("Delete flight backend process...")
+func DeleteTicketHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Delete ticket backend process...")
 
 	id, ok := mux.Vars(r)["id"]
 	if !ok {
 		log.Println("Bad request: cannot get id")
-		http.Error(w, "Bad request: cannot read id", http.StatusBadRequest)
+		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
 
 	escapedID := url.PathEscape(id)
-	rawURL := config.Management_flights_api_url + "/" + escapedID
+	rawURL := config.Management_tickets_api_url + "/" + escapedID
 	req, err := http.NewRequest(http.MethodDelete, rawURL, nil)
 	if err != nil {
 		log.Println("Cannot create request")
@@ -251,7 +255,9 @@ func DeleteFlightHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
-	log.Println("Successfully deleted flight.")
+	log.Println("Successfully deleted ticket")
+
+	go sendtoCache(body)
 }
 
 func handleError(w http.ResponseWriter, err error) {
@@ -262,4 +268,22 @@ func handleError(w http.ResponseWriter, err error) {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func sendtoCache(body []byte) {
+	var ticket models.Ticket
+	if err := json.Unmarshal(body, &ticket); err != nil {
+		log.Println("Error unmarshalling response:", err)
+		return
+	}
+
+	message := models.Message{
+		Key: config.KEY_FOR_TICKETS + ":" + ticket.Id.String(),
+		Value: models.CacheItem{
+			Value:      string(body),
+			Expiration: config.VALUE_EXPIRATION_TIME,
+			SetedTime:  time.Now(),
+		},
+	}
+	go service.SaveToCache(message)
 }

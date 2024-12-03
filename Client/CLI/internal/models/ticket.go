@@ -8,13 +8,13 @@ import (
 
 type Ticket struct {
 	Id             uuid.UUID `json:"id" bson:"id"`
-	FlightId       uuid.UUID `json:"flightId" bson:"flightId"`
-	OwnerId        uuid.UUID `json:"ownerId" bson:"ownerId"`
-	TicketCost     float64   `json:"ticketCost" bson:"ticketCost"`
+	FlightInfo     Flight    `json:"flightInfo" bson:"flightInfo"`
+	Owner          Customer  `json:"owner" bson:"owner"`
+	TicketCost     int       `json:"ticketCost" bson:"ticketCost"`
 	ClassOfService string    `json:"classOfService" bson:"classOfService"`
 }
 
 func (t Ticket) String() string {
-	return fmt.Sprintf("Ticket ID: %d, flightId: %d, Owner ID: %d, Cost: %.2f",
-		t.Id, t.FlightId, t.OwnerId, t.TicketCost)
+	return fmt.Sprintf("Ticket ID: %d, flightInfo: %v, Owner: %v, Cost: %d, Class of service: %s",
+		t.Id, t.FlightInfo, t.Owner, t.TicketCost, t.ClassOfService)
 }

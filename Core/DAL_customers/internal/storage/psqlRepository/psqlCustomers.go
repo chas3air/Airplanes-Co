@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/chas3air/Airplanes-Co/Core/DAL_customers/internal/models"
-	"github.com/google/uuid"
 )
 
 type PsqlCustomersStorage struct {
@@ -148,19 +147,19 @@ func (s PsqlCustomersStorage) Insert(ctx context.Context, innerObj any) (any, er
 	}
 
 	customer := innerObj.(models.Customer)
-	var id uuid.UUID
 
-	err = s.DB.QueryRowContext(ctx,
+	_, err = s.DB.ExecContext(ctx,
 		`INSERT INTO `+os.Getenv("PSQL_TABLE_NAME")+`
-		(login, password, role, surname, name) VALUES ($1, $2, $3, $4, $5) RETURNING id
-		`, customer.Login, customer.Password, customer.Role, customer.Surname, customer.Name).Scan(&id)
+        (id, login, password, role, surname, name) VALUES ($1, $2, $3, $4, $5, $6)`,
+		customer.Id, customer.Login, customer.Password, customer.Role, customer.Surname, customer.Name)
 
 	if err != nil {
 		log.Println("Error inserting customer:", err.Error())
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
-	log.Printf("Inserted customer with ID=%s\n", id)
-	return s.GetById(ctx, id)
+
+	log.Printf("Inserted customer with ID=%s\n", customer.Id)
+	return s.GetById(ctx, customer.Id)
 }
 
 // Update modifies an existing customer in the database.

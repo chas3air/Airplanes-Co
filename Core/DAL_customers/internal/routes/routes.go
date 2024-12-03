@@ -161,6 +161,7 @@ func InsertCustomer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	log.Println("Customer who comes from client to dal_customers is:", customer.String())
 
 	obj, err := CustomersDB.Insert(ctx, customer)
 	if err != nil {

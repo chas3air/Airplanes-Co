@@ -67,8 +67,8 @@ services:
   #     - psql_db
   #   networks:
   #     - db
-  #   # ports:
-  #   #   - "76:12002"
+  #   ports:
+  #     - "76:12002"
   #   environment:
   #     PSQL_DB_USER: postgres
   #     PSQL_DB_PASSWORD: 123
@@ -96,8 +96,8 @@ services:
     container_name: management_flights
     networks:
       - db
-    # ports:
-    #   - "78:12006"
+    ports:
+      - "78:12006"
     environment:
       DAL_FLIGHTS_URL: http://dal_flights:12001/postgres/flights
       LIMIT_RESPONSE_TIME: 10
@@ -114,29 +114,29 @@ services:
   #     DAL_TICKETS_URL: http://dal_tickets:12002/postgres/tickets
   #     LIMIT_RESPONSE_TIME: 10
 
-  catalog:
-    build:
-      context: ./Core/Flights_catalog
-    container_name: catalog
-    # ports:
-    #   - "80:12004"
-    networks:
-      - db
-    environment:
-      MANAGEMENT_FLIGHTS_URL: http://management_flights:12006/management-flights/flights
-      LIMIT_RESPONSE_TIME: 5
+  # catalog:
+  #   build:
+  #     context: ./Core/Flights_catalog
+  #   container_name: catalog
+  #   # ports:
+  #   #   - "80:12004"
+  #   networks:
+  #     - db
+  #   environment:
+  #     MANAGEMENT_FLIGHTS_URL: http://management_flights:12006/management-flights/flights
+  #     LIMIT_RESPONSE_TIME: 5
 
-  auth:
-    build: 
-      context: ./Core/Auth
-    container_name: auth
-    # ports:
-    #   - "81:12005"
-    networks:
-      - db
-    environment:
-      MANAGEMENT_CUSTOMERS_URL: http://management_customers:12007/management-customers/customers
-      LIMIT_RESPONSE_TIME: 5
+  # auth:
+  #   build: 
+  #     context: ./Core/Auth
+  #   container_name: auth
+  #   # ports:
+  #   #   - "81:12005"
+  #   networks:
+  #     - db
+  #   environment:
+  #     MANAGEMENT_CUSTOMERS_URL: http://management_customers:12007/management-customers/customers
+  #     LIMIT_RESPONSE_TIME: 5
 
   # cart:
   #   build:
@@ -192,31 +192,32 @@ services:
       CACHE_URL: http://cache:12011/cache
       LIMIT_RESPONSE_TIME: 5
 
-  backend:
-    build: 
-      context: "./Core/Backend"
-    container_name: backend
-    # ports:
-    #   - "87:12013"
-    networks:
-      - db
-    environment:
-      MANAGEMENT_FLIGHTS_API_URL: http://management_flights:12006/management-flights/flights
-      MANAGEMENT_CUSTOMERS_API_URL: http://management_customers:12007/management-customers/customers
-      MANAGEMENT_CACHE_API_URL: http://management_cache:12011/cache
-      AUTHAPI_URL: http://auth:12005
-      LIMIT_RESPONSE_TIME: 5
+  # backend:
+  #   build: 
+  #     context: "./Core/Backend"
+  #   container_name: backend
+  #   ports:
+  #     - "87:12013"
+  #   networks:
+  #     - db
+  #   environment:
+  #     MANAGEMENT_FLIGHTS_API_URL: http://management_flights:12006/management-flights/flights
+  #     MANAGEMENT_CUSTOMERS_API_URL: http://management_customers:12007/management-customers/customers
+  #     MANAGEMENT_TICKETS_API_URL: http://management_tickets:12008/management-tickets/tickets
+  #     MANAGEMENT_CACHE_API_URL: http://management_cache:12011/cache
+  #     AUTHAPI_URL: http://auth:12005
+  #     LIMIT_RESPONSE_TIME: 5
 
-  cli:
-    build: 
-      context: ./Client/CLI
-    container_name: cli
-    ports:
-      - "90:12016"
-    networks:
-      - db
-    environment:
-      BACKEND_URL: http://backend:12013
-      LIMIT_RESPONSE_TIME: 5
-    stdin_open: true
-    tty: true
+  # cli:
+  #   build: 
+  #     context: ./Client/CLI
+  #   container_name: cli
+  #   ports:
+  #     - "90:12016"
+  #   networks:
+  #     - db
+  #   environment:
+  #     BACKEND_URL: http://backend:12013
+  #     LIMIT_RESPONSE_TIME: 5
+  #   stdin_open: true
+  #   tty: true

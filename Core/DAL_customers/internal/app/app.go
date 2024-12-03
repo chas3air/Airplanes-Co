@@ -17,7 +17,7 @@ func Run() {
 	r.HandleFunc("/postgres/customers/login", routes.GetCustomerByLoginAndPassword).Methods(http.MethodGet)
 	r.HandleFunc("/postgres/customers", routes.InsertCustomer).Methods(http.MethodPost)
 	r.HandleFunc("/postgres/customers", routes.UpdateCustomer).Methods(http.MethodPatch)
-	r.HandleFunc("/postgres/customers/k", routes.DeleteCustomer).Methods(http.MethodDelete)
+	r.HandleFunc("/postgres/customers/{id}", routes.DeleteCustomer).Methods(http.MethodDelete)
 
 	http.ListenAndServe(":12000", r)
 }

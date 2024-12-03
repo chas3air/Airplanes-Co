@@ -14,6 +14,7 @@ import (
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/config"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/service"
+	"github.com/google/uuid"
 )
 
 var limitTime = service.GetLimitTime()
@@ -262,12 +263,15 @@ func CreateFlight() (models.Flight, error) {
 	}
 
 	flight := models.Flight{
+		Id:               uuid.New(),
 		FromWhere:        fromWhere,
 		Destination:      destination,
 		FlightTime:       flightTime,
 		FlightDuration:   flightDuration,
 		FlightSeatsCosts: make([]int, 0),
 	}
+
+	log.Println("Id of flight generated on client:", flight.Id)
 
 	return flight, nil
 }

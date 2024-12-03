@@ -2,6 +2,7 @@ package routes
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -14,6 +15,10 @@ import (
 var managementTicketsURL = os.Getenv("MANAGEMENT_TICKETS_URL")
 var limitTime = service.GetLimitTime("LIMIT_RESPONSE_TIME")
 
+var httpClient = &http.Client{
+	Timeout: limitTime,
+}
+
 // GetPurchasedTicketsHandler handles requests to retrieve purchased tickets.
 // It extracts the owner ID from the request parameters,
 // sends a GET request to an external service to fetch the list of tickets,
@@ -21,9 +26,9 @@ var limitTime = service.GetLimitTime("LIMIT_RESPONSE_TIME")
 func GetPurchasedTicketsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Processing request to get purchased tickets...")
 
-	ownerId := r.FormValue("ownerId")
+	ownerId := r.URL.Query().Get("ownerId")
 
-	resp, err := http.Get(managementTicketsURL)
+	resp, err := httpClient.Get(managementTicketsURL)
 	if err != nil {
 		log.Printf("Error sending GET request to %s: %v", managementTicketsURL, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -31,9 +36,9 @@ func GetPurchasedTicketsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		log.Printf("Received non-200 response from management service: %s", resp.Status)
-		http.Error(w, err.Error(), resp.StatusCode)
+	if resp.StatusCode >= 400 {
+		log.Printf("Received error response from management service: %s", resp.Status)
+		http.Error(w, fmt.Errorf("response code is: %d", resp.StatusCode).Error(), resp.StatusCode)
 		return
 	}
 
@@ -53,7 +58,7 @@ func GetPurchasedTicketsHandler(w http.ResponseWriter, r *http.Request) {
 
 	var outTickets []models.Ticket
 	for _, ticket := range tickets {
-		if ticket.OwnerId.String() == ownerId {
+		if ticket.Owner.Id.String() == ownerId {
 			outTickets = append(outTickets, ticket)
 		}
 	}

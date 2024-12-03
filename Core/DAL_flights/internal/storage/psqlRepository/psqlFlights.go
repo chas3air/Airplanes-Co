@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/chas3air/Airplanes-Co/Core/DAL_flights/internal/models"
-	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
@@ -37,20 +36,18 @@ func (s PsqlFlightsStorage) GetAll(ctx context.Context) (any, error) {
 	flights := make([]models.Flight, 0)
 	for rows.Next() {
 		var flight models.Flight
-		var seatCosts pq.Int64Array // Используем pq.Int64Array
+		var seatCosts pq.Int64Array
 
 		if err := rows.Scan(&flight.Id, &flight.FromWhere, &flight.Destination, &flight.FlightTime, &flight.FlightDuration, &seatCosts); err != nil {
 			log.Println("Error scanning row:", err.Error())
 			continue
 		}
 
-		// Проверка длины массива seatCosts
 		if len(seatCosts) != 4 {
 			log.Println("Invalid number of seat costs, expected 4 but got:", len(seatCosts))
 			continue
 		}
 
-		// Инициализация массива
 		flight.FlightSeatsCosts = make([]int, len(seatCosts))
 		for i, cost := range seatCosts {
 			flight.FlightSeatsCosts[i] = int(cost)
@@ -77,7 +74,7 @@ func (s PsqlFlightsStorage) GetById(ctx context.Context, id any) (any, error) {
 	`, id)
 
 	var flight models.Flight
-	var seatCosts pq.Int64Array // Используем pq.Int64Array
+	var seatCosts pq.Int64Array
 	if err := row.Scan(&flight.Id, &flight.FromWhere, &flight.Destination, &flight.FlightTime, &flight.FlightDuration, &seatCosts); err != nil {
 		if err == sql.ErrNoRows {
 			log.Printf("No flight found with ID=%v\n", id)
@@ -87,13 +84,11 @@ func (s PsqlFlightsStorage) GetById(ctx context.Context, id any) (any, error) {
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
-	// Проверка длины массива seatCosts
 	if len(seatCosts) != 4 {
 		log.Println("Invalid number of seat costs, expected 4 but got:", len(seatCosts))
 		return nil, fmt.Errorf("%s: invalid seat costs", op)
 	}
 
-	// Инициализация массива
 	flight.FlightSeatsCosts = make([]int, len(seatCosts))
 	for i, cost := range seatCosts {
 		flight.FlightSeatsCosts[i] = int(cost)
@@ -108,20 +103,17 @@ func (s PsqlFlightsStorage) Insert(ctx context.Context, innerObj any) (any, erro
 	const op = "DAL.internal.storage.psqlRepository.psqlFlights.Insert"
 	flight := innerObj.(models.Flight)
 
-	var id uuid.UUID
-	err := s.DB.QueryRowContext(ctx, `
+	_, err := s.DB.ExecContext(ctx, `
 		INSERT INTO `+os.Getenv("PSQL_TABLE_NAME")+`
-		(fromWhere, destination, flightTime, flightDuration, flightSeatsCost)
-		VALUES ($1, $2, $3, $4, $5) RETURNING id
-	`, flight.FromWhere, flight.Destination, flight.FlightTime, flight.FlightDuration, pq.Array(flight.FlightSeatsCosts[:])).Scan(&id)
+		(id, fromWhere, destination, flightTime, flightDuration, flightSeatsCost)
+		VALUES ($1, $2, $3, $4, $5, $6)
+	`, flight.Id, flight.FromWhere, flight.Destination, flight.FlightTime, flight.FlightDuration, pq.Array(flight.FlightSeatsCosts[:]))
 	if err != nil {
 		log.Println("Error inserting flight:", err.Error())
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
-	flight.Id = id
-
-	log.Printf("Inserted flight with ID=%s\n", id.String())
+	log.Printf("Inserted flight with ID=%s\n", flight.Id.String())
 	return flight, nil
 }
 

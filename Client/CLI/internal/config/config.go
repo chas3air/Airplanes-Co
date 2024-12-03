@@ -12,4 +12,6 @@ const (
 	Guest          string = "guest"
 )
 
+var NamesSeats = [4]string{"Economy", "Comfort", "Business", "First"}
+
 var Backend_url = os.Getenv("BACKEND_URL")

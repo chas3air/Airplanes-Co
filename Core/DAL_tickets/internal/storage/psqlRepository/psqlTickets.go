@@ -7,8 +7,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/chas3air/Airplanes-Co/Core/DAL_tickets/internal/config"
 	"github.com/chas3air/Airplanes-Co/Core/DAL_tickets/internal/models"
-	"github.com/google/uuid"
 )
 
 type PsqlTicketsStorage struct {
@@ -17,31 +17,25 @@ type PsqlTicketsStorage struct {
 
 // MustNewPsqlTicketsStorage initializes a new PsqlTicketsStorage instance.
 // It checks the database connection and panics if the tickets table is unavailable.
-func MustNewPsqlTicketsStorage(db *sql.DB) PsqlTicketsStorage {
-	const op = "DAL.internal.storage.psqlRepository.newTicketStorage"
-	err := db.Ping()
-	if err != nil {
-		log.Println("Tickets table is unavailable: " + err.Error())
-		panic(fmt.Errorf("%s: %w", op, err))
-	}
-
+func MustNewPsqlTicketsStorage() PsqlTicketsStorage {
 	return PsqlTicketsStorage{
-		PsqlStorage: NewPsqlStorage(db),
+		PsqlStorage: PsqlStorage{},
 	}
 }
 
 // GetAll retrieves all tickets from the database.
-// It returns a slice of Ticket models and an error, if any occurs.
 func (s PsqlTicketsStorage) GetAll(ctx context.Context) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlTickets.GetAll"
 
-	err := s.DB.Ping()
+	// Открываем соединение
+	db, err := sql.Open("postgres", config.ConnStr)
 	if err != nil {
-		log.Println("Tickets table is unavailable: " + err.Error())
-		return nil, fmt.Errorf("tickets table is unavailable, file: %s: %w", op, err)
+		log.Println(err)
+		return nil, err
 	}
+	defer db.Close()
 
-	rows, err := s.DB.QueryContext(ctx, `
+	rows, err := db.QueryContext(ctx, `
 		SELECT * FROM `+os.Getenv("PSQL_TABLE_NAME")+`;
 	`)
 	if err != nil {
@@ -54,7 +48,7 @@ func (s PsqlTicketsStorage) GetAll(ctx context.Context) (any, error) {
 	tickets := make([]models.Ticket, 0, 10)
 
 	for rows.Next() {
-		err := rows.Scan(&ticket.Id, &ticket.FlightId, &ticket.OwnerId,
+		err := rows.Scan(&ticket.Id, &ticket.FlightInfo.Id, &ticket.Owner.Id,
 			&ticket.TicketCost, &ticket.ClassOfService)
 		if err != nil {
 			log.Println("Error scanning row:", err.Error())
@@ -73,24 +67,25 @@ func (s PsqlTicketsStorage) GetAll(ctx context.Context) (any, error) {
 }
 
 // GetById retrieves a ticket by its ID.
-// It returns the Ticket model and an error if no ticket is found or if an error occurs.
 func (s PsqlTicketsStorage) GetById(ctx context.Context, id any) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlTickets.GetById"
 
-	err := s.DB.Ping()
+	// Открываем соединение
+	db, err := sql.Open("postgres", config.ConnStr)
 	if err != nil {
-		log.Println("Tickets table is unavailable: " + err.Error())
-		return nil, fmt.Errorf("tickets table is unavailable, file: %s: %w", op, err)
+		log.Println(err)
+		return nil, err
 	}
+	defer db.Close()
 
-	row := s.DB.QueryRowContext(ctx, `
+	row := db.QueryRowContext(ctx, `
 		SELECT * FROM `+os.Getenv("PSQL_TABLE_NAME")+`
 		WHERE id = $1;
 	`, id)
 
 	var ticket models.Ticket
 
-	err = row.Scan(&ticket.Id, &ticket.FlightId, &ticket.OwnerId, &ticket.TicketCost, &ticket.ClassOfService)
+	err = row.Scan(&ticket.Id, &ticket.FlightInfo.Id, &ticket.Owner.Id, &ticket.TicketCost, &ticket.ClassOfService)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -106,53 +101,51 @@ func (s PsqlTicketsStorage) GetById(ctx context.Context, id any) (any, error) {
 }
 
 // Insert adds a new ticket to the database.
-// It returns the inserted Ticket model and an error if the insertion fails.
 func (s PsqlTicketsStorage) Insert(ctx context.Context, innerObj any) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlTickets.Insert"
 
-	err := s.DB.Ping()
+	db, err := sql.Open("postgres", config.ConnStr)
 	if err != nil {
-		log.Println("Tickets table is unavailable: " + err.Error())
-		return nil, fmt.Errorf("tickets table is unavailable, file: %s: %w", op, err)
+		log.Println(err)
+		return nil, err
 	}
+	defer db.Close()
 
 	ticket := innerObj.(models.Ticket)
-	var id uuid.UUID
 
-	err = s.DB.QueryRowContext(ctx, `
+	_, err = db.ExecContext(ctx, `
 		INSERT INTO `+os.Getenv("PSQL_TABLE_NAME")+`
-		(flightId, ownerId, ticketCost, classOfService)
-		VALUES ($1, $2, $3, $4) RETURNING id
-	`, ticket.FlightId, ticket.OwnerId, ticket.TicketCost, ticket.ClassOfService).Scan(&id)
+		(id, flightId, ownerId, ticketCost, classOfService)
+		VALUES ($1, $2, $3, $4, $5) RETURNING id
+	`, ticket.Id, ticket.FlightInfo.Id, ticket.Owner.Id, ticket.TicketCost, ticket.ClassOfService)
 
 	if err != nil {
 		log.Println("Error inserting ticket:", err.Error())
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
-	log.Printf("Inserted ticket with ID=%d\n", id)
-	ticket.Id = id
+	log.Printf("Inserted ticket with ID=%s\n", ticket.Id.String())
 	return ticket, nil
 }
 
 // Update modifies an existing ticket in the database.
-// It returns the updated Ticket model and an error if the update fails.
 func (s PsqlTicketsStorage) Update(ctx context.Context, innerObj any) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlTickets.Update"
 
-	err := s.DB.Ping()
+	db, err := sql.Open("postgres", config.ConnStr)
 	if err != nil {
-		log.Println("Tickets table is unavailable: " + err.Error())
-		return nil, fmt.Errorf("tickets table is unavailable, file: %s: %w", op, err)
+		log.Println(err)
+		return nil, err
 	}
+	defer db.Close()
 
 	ticket := innerObj.(models.Ticket)
 
-	_, err = s.DB.ExecContext(ctx, `
+	_, err = db.ExecContext(ctx, `
 		UPDATE `+os.Getenv("PSQL_TABLE_NAME")+`
 		SET flightId = $1, ownerId = $2, ticketCost = $3, classOfService = $4
 		WHERE id = $5;
-	`, ticket.FlightId, ticket.OwnerId, ticket.TicketCost, ticket.ClassOfService, ticket.Id)
+	`, ticket.FlightInfo.Id, ticket.Owner.Id, ticket.TicketCost, ticket.ClassOfService, ticket.Id)
 
 	if err != nil {
 		log.Println("Error updating ticket:", err.Error())
@@ -164,15 +157,16 @@ func (s PsqlTicketsStorage) Update(ctx context.Context, innerObj any) (any, erro
 }
 
 // Delete removes a ticket from the database by its ID.
-// It returns the deleted Ticket model and an error if the deletion fails.
 func (s PsqlTicketsStorage) Delete(ctx context.Context, id any) (any, error) {
 	const op = "DAL.internal.storage.psqlRepository.psqlTickets.Delete"
 
-	err := s.DB.Ping()
+	// Открываем соединение
+	db, err := sql.Open("postgres", config.ConnStr)
 	if err != nil {
-		log.Println("Tickets table is unavailable: " + err.Error())
-		return nil, fmt.Errorf("tickets table is unavailable, file: %s: %w", op, err)
+		log.Println(err)
+		return nil, err
 	}
+	defer db.Close()
 
 	ticket, err := s.GetById(ctx, id)
 	if err != nil {
@@ -180,7 +174,7 @@ func (s PsqlTicketsStorage) Delete(ctx context.Context, id any) (any, error) {
 		return nil, fmt.Errorf("%s: %v", op, err)
 	}
 
-	_, err = s.DB.ExecContext(ctx, `
+	_, err = db.ExecContext(ctx, `
 		DELETE FROM `+os.Getenv("PSQL_TABLE_NAME")+`
 		WHERE id = $1;
 	`, id)

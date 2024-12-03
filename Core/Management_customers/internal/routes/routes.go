@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var database_url = os.Getenv("DAL_CUSTOMERS_URL")
+var dal_customers_url = os.Getenv("DAL_CUSTOMERS_URL")
 var limitTime = service.GetLimitTime("LIMIT_RESPONSE_TIME")
 
 var httpClient = &http.Client{
@@ -25,9 +25,9 @@ var httpClient = &http.Client{
 func GetCustomersHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching all customers")
 
-	resp, err := httpClient.Get(database_url)
+	resp, err := httpClient.Get(dal_customers_url)
 	if err != nil {
-		log.Println("Cannot send request to", database_url)
+		log.Println("Cannot send request to", dal_customers_url)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -54,9 +54,9 @@ func GetCustomerByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	id_s := mux.Vars(r)["id"]
 
-	resp, err := httpClient.Get(database_url + "/" + id_s + "/")
+	resp, err := httpClient.Get(dal_customers_url + "/" + id_s + "/")
 	if err != nil {
-		log.Println("Cannot send request to", database_url)
+		log.Println("Cannot send request to", dal_customers_url)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -85,11 +85,11 @@ func GetCustomerByLoginAndPasswordHandler(w http.ResponseWriter, r *http.Request
 	login := r.Form.Get("login")
 	password := r.Form.Get("password")
 
-	url := fmt.Sprintf("%s/login?login=%s&password=%s", database_url, login, password)
+	url := fmt.Sprintf("%s/login?login=%s&password=%s", dal_customers_url, login, password)
 
 	resp, err := httpClient.Get(url)
 	if err != nil {
-		log.Println("Cannot send request to", database_url)
+		log.Println("Cannot send request to", dal_customers_url)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -122,7 +122,7 @@ func InsertCustomerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	resp, err := httpClient.Post(database_url, "application/json", bytes.NewBuffer(body))
+	resp, err := httpClient.Post(dal_customers_url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		log.Println("Error sending request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -157,7 +157,7 @@ func UpdateCustomerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	req, err := http.NewRequest(http.MethodPatch, database_url, bytes.NewBuffer(body))
+	req, err := http.NewRequest(http.MethodPatch, dal_customers_url, bytes.NewBuffer(body))
 	if err != nil {
 		log.Println("Error creating request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -193,8 +193,9 @@ func DeleteCustomerHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Deleting customer")
 
 	id_s := mux.Vars(r)["id"]
+	log.Printf("Customer ID to delete: %s\n", id_s)
 
-	req, err := http.NewRequest(http.MethodDelete, database_url+"/"+id_s, nil)
+	req, err := http.NewRequest(http.MethodDelete, dal_customers_url+"/"+id_s, nil)
 	if err != nil {
 		log.Println("Error creating request")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -210,15 +211,15 @@ func DeleteCustomerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	responseBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Cannot read response body")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		log.Printf("Failed to delete customer, received response code: %d\n", resp.StatusCode)
+		responseBody, _ := io.ReadAll(resp.Body)
+		log.Printf("Response body: %s\n", responseBody)
+		http.Error(w, fmt.Sprintf("Failed to delete customer: %s", responseBody), resp.StatusCode)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
-	w.Write(responseBody)
 	log.Println("Successfully deleted customer.")
 }

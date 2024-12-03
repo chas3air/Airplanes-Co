@@ -39,8 +39,8 @@ func TestGetTicketsHandler(t *testing.T) {
 func TestInsertTicketHandler(t *testing.T) {
 	ticket := models.Ticket{
 		Id:             uuid.New(),
-		FlightId:       uuid.New(),
-		OwnerId:        uuid.New(),
+		FlightInfo:     models.Flight{},
+		Owner:          models.Customer{},
 		TicketCost:     150.75,
 		ClassOfService: "Economy",
 	}
@@ -69,8 +69,8 @@ func TestInsertTicketHandler(t *testing.T) {
 func TestUpdateTicketHandler(t *testing.T) {
 	initialTicket := models.Ticket{
 		Id:             uuid.New(),
-		FlightId:       uuid.New(),
-		OwnerId:        uuid.New(),
+		FlightInfo:     models.Flight{},
+		Owner:          models.Customer{},
 		TicketCost:     150.75,
 		ClassOfService: "Economy",
 	}
@@ -110,8 +110,8 @@ func TestDeleteTicketHandler(t *testing.T) {
 	generatedId := uuid.New()
 	ticket := models.Ticket{
 		Id:             generatedId,
-		FlightId:       uuid.New(),
-		OwnerId:        uuid.New(),
+		FlightInfo:     models.Flight{},
+		Owner:          models.Customer{},
 		TicketCost:     150.75,
 		ClassOfService: "Economy",
 	}
@@ -141,8 +141,8 @@ func TestDeleteTicketHandler(t *testing.T) {
 func TestClearHandler(t *testing.T) {
 	ticket1 := models.Ticket{
 		Id:             uuid.New(),
-		FlightId:       uuid.New(),
-		OwnerId:        uuid.New(),
+		FlightInfo:     models.Flight{},
+		Owner:          models.Customer{},
 		TicketCost:     150.75,
 		ClassOfService: "Economy",
 	}
@@ -150,8 +150,8 @@ func TestClearHandler(t *testing.T) {
 
 	ticket2 := models.Ticket{
 		Id:             uuid.New(),
-		FlightId:       uuid.New(),
-		OwnerId:        uuid.New(),
+		FlightInfo:     models.Flight{},
+		Owner:          models.Customer{},
 		TicketCost:     200.00,
 		ClassOfService: "Business",
 	}

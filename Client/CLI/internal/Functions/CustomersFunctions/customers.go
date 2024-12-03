@@ -14,6 +14,7 @@ import (
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/config"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/service"
+	"github.com/google/uuid"
 )
 
 var limitTime = service.GetLimitTime()
@@ -246,12 +247,15 @@ func CreateCustomer() (models.Customer, error) {
 	name := service.GetInput(scanner, "Enter name")
 
 	customer := models.Customer{
+		Id:       uuid.New(),
 		Login:    login,
 		Password: password,
 		Role:     role,
 		Surname:  surname,
 		Name:     name,
 	}
+
+	log.Println("Id of customer generated on client:", customer.Id)
 
 	return customer, nil
 }
