@@ -180,7 +180,7 @@ func InsertCustomerHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateCustomerHandler(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Не реализовано", http.StatusNotImplemented)
+	http.Error(w, "Not implemented", http.StatusNotImplemented)
 }
 
 func DeleteCustomerHandler(w http.ResponseWriter, r *http.Request) {

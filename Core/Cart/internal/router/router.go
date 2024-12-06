@@ -133,8 +133,13 @@ func ClearHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Clearing cart")
 
 	ticketsToReturn := TicketsCart
-	TicketsCart = []models.Ticket{} // Очистка корзины
+	TicketsCart = []models.Ticket{}
 
-	writeJSONResponse(w, http.StatusOK, ticketsToReturn)
-	log.Println("Successfully cleared cart and returned tickets.")
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(ticketsToReturn); err != nil {
+		log.Println("Error encoding response:", err)
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
+	}
 }

@@ -59,24 +59,24 @@ services:
       PSQL_TABLE_NAME: Customers
       PSQL_LIMIT_RESPONSE_TIME: 10    
 
-  # dal_tickets:
-  #   build: 
-  #     context: ./Core/Dal_tickets
-  #   container_name: dal_tickets
-  #   depends_on:
-  #     - psql_db
-  #   networks:
-  #     - db
-  #   ports:
-  #     - "76:12002"
-  #   environment:
-  #     PSQL_DB_USER: postgres
-  #     PSQL_DB_PASSWORD: 123
-  #     PSQL_DB_HOST: psql_cont
-  #     PSQL_DB_PORT: 5432
-  #     PSQL_DB_DBNAME: airplanesco
-  #     PSQL_TABLE_NAME: Tickets
-  #     PSQL_LIMIT_RESPONSE_TIME: 10
+  dal_tickets:
+    build: 
+      context: ./Core/Dal_tickets
+    container_name: dal_tickets
+    depends_on:
+      - psql_db
+    networks:
+      - db
+    # ports:
+    #   - "76:12002"
+    environment:
+      PSQL_DB_USER: postgres
+      PSQL_DB_PASSWORD: 123
+      PSQL_DB_HOST: psql_cont
+      PSQL_DB_PORT: 5432
+      PSQL_DB_DBNAME: airplanesco
+      PSQL_TABLE_NAME: Tickets
+      PSQL_LIMIT_RESPONSE_TIME: 10
 
   management_customers:
     build:
@@ -102,17 +102,17 @@ services:
       DAL_FLIGHTS_URL: http://dal_flights:12001/postgres/flights
       LIMIT_RESPONSE_TIME: 10
 
-  # management_tickets:
-  #   build:
-  #     context: ./Core/Management_tickets
-  #   container_name: management_tickets
-  #   networks:
-  #     - db
-  #   ports:
-  #     - "79:12008"
-  #   environment:
-  #     DAL_TICKETS_URL: http://dal_tickets:12002/postgres/tickets
-  #     LIMIT_RESPONSE_TIME: 10
+  management_tickets:
+    build:
+      context: ./Core/Management_tickets
+    container_name: management_tickets
+    networks:
+      - db
+    ports:
+      - "79:12008"
+    environment:
+      DAL_TICKETS_URL: http://dal_tickets:12002/postgres/tickets
+      LIMIT_RESPONSE_TIME: 10
 
   # catalog:
   #   build:
@@ -126,26 +126,26 @@ services:
   #     MANAGEMENT_FLIGHTS_URL: http://management_flights:12006/management-flights/flights
   #     LIMIT_RESPONSE_TIME: 5
 
-  # auth:
-  #   build: 
-  #     context: ./Core/Auth
-  #   container_name: auth
-  #   # ports:
-  #   #   - "81:12005"
-  #   networks:
-  #     - db
-  #   environment:
-  #     MANAGEMENT_CUSTOMERS_URL: http://management_customers:12007/management-customers/customers
-  #     LIMIT_RESPONSE_TIME: 5
+  auth:
+    build: 
+      context: ./Core/Auth
+    container_name: auth
+    # ports:
+    #   - "81:12005"
+    networks:
+      - db
+    environment:
+      MANAGEMENT_CUSTOMERS_URL: http://management_customers:12007/management-customers/customers
+      LIMIT_RESPONSE_TIME: 5
 
-  # cart:
-  #   build:
-  #     context: ./Core/Cart
-  #   container_name: cart
-  #   ports:
-  #     - "82:12003"
-  #   networks:
-  #     - db   
+  cart:
+    build:
+      context: ./Core/Cart
+    container_name: cart
+    ports:
+      - "82:12003"
+    networks:
+      - db   
 
   # order_ticket:
   #   build:
@@ -159,17 +159,17 @@ services:
   #     CART_URL: http://cart:12003/cart
   #     LIMIT_RESPONSE_TIME: 5
   
-  # purchased_tickets:
-  #   build:
-  #     context: ./Core/PurchasedTickets
-  #   container_name: purchased_tickets
-  #   ports:
-  #     - "84:12010"
-  #   networks:
-  #     - db
-  #   environment:
-  #     MANAGEMENT_TICKETS_URL: http://management_tickets:12008/management-tickets/tickets
-  #     LIMIT_RESPONSE_TIME: 5
+  purchased_tickets:
+    build:
+      context: ./Core/PurchasedTickets
+    container_name: purchased_tickets
+    ports:
+      - "84:12010"
+    networks:
+      - db
+    environment:
+      MANAGEMENT_TICKETS_URL: http://management_tickets:12008/management-tickets/tickets
+      LIMIT_RESPONSE_TIME: 5
   
   cache:
     build:
@@ -192,32 +192,44 @@ services:
       CACHE_URL: http://cache:12011/cache
       LIMIT_RESPONSE_TIME: 5
 
-  # backend:
-  #   build: 
-  #     context: "./Core/Backend"
-  #   container_name: backend
-  #   ports:
-  #     - "87:12013"
-  #   networks:
-  #     - db
-  #   environment:
-  #     MANAGEMENT_FLIGHTS_API_URL: http://management_flights:12006/management-flights/flights
-  #     MANAGEMENT_CUSTOMERS_API_URL: http://management_customers:12007/management-customers/customers
-  #     MANAGEMENT_TICKETS_API_URL: http://management_tickets:12008/management-tickets/tickets
-  #     MANAGEMENT_CACHE_API_URL: http://management_cache:12011/cache
-  #     AUTHAPI_URL: http://auth:12005
-  #     LIMIT_RESPONSE_TIME: 5
+  payment:
+    build: 
+      context: ./Core/Payment
+    container_name: payment
+    networks:
+      - db
+    environment:
+      BANK_ACCOUNT: "1234-5678-9012-3456"
 
-  # cli:
-  #   build: 
-  #     context: ./Client/CLI
-  #   container_name: cli
-  #   ports:
-  #     - "90:12016"
-  #   networks:
-  #     - db
-  #   environment:
-  #     BACKEND_URL: http://backend:12013
-  #     LIMIT_RESPONSE_TIME: 5
-  #   stdin_open: true
-  #   tty: true
+  backend:
+    build: 
+      context: "./Core/Backend"
+    container_name: backend
+    ports:
+      - "87:12013"
+    networks:
+      - db
+    environment:
+      MANAGEMENT_FLIGHTS_API_URL: http://management_flights:12006/management-flights/flights
+      MANAGEMENT_CUSTOMERS_API_URL: http://management_customers:12007/management-customers/customers
+      MANAGEMENT_TICKETS_API_URL: http://management_tickets:12008/management-tickets/tickets
+      MANAGEMENT_CACHE_API_URL: http://management_cache:12011/cache
+      AUTHAPI_URL: http://auth:12005
+      CART_API_URL: http://cart:12003/cart
+      PURCHASED_TICKETS_API_URL: http://purchased_tickets:12010/purchased-tickets
+      PAYMENT_API_URL: http://payment:12010
+      LIMIT_RESPONSE_TIME: 5
+
+  cli:
+    build: 
+      context: ./Client/CLI
+    container_name: cli
+    ports:
+      - "90:12016"
+    networks:
+      - db
+    environment:
+      BACKEND_URL: http://backend:12013
+      LIMIT_RESPONSE_TIME: 5
+    stdin_open: true
+    tty: true

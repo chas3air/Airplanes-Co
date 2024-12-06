@@ -3,10 +3,14 @@ package ui
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
+	"strconv"
 	"time"
 
 	flightsfunctions "github.com/chas3air/Airplanes-Co/Client/CLI/internal/Functions/FlightsFunctions"
+	ticketsfunctions "github.com/chas3air/Airplanes-Co/Client/CLI/internal/Functions/TicketsFunctions"
+	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/config"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/service"
 )
@@ -31,7 +35,7 @@ func UserInterface(user *models.Customer) {
 				break
 			}
 
-			flightsfunctions.PrintFlights(localFlights)
+			flightsfunctions.PrintFlights(localFlights, "ID")
 			fmt.Println("Press Enter to continue...")
 			bufio.NewReader(os.Stdin).ReadString('\n')
 
@@ -40,17 +44,10 @@ func UserInterface(user *models.Customer) {
 
 			from := service.GetInput(scanner, "Enter from where u need flight")
 			dest := service.GetInput(scanner, "Enter destination u need")
-			flightTimeStr := service.GetInput(scanner, "Enter flight time (format: YYYY-MM-DD HH:MM:SS)")
+			var numOfFlight int = 0
+			var costNum int = 0
 
-			flightTime, err := service.ParseTime(flightTimeStr, "2006-01-02 15:04:05")
-			if err != nil {
-				fmt.Println("Error:", err)
-				fmt.Println("Press Enter to continue...")
-				bufio.NewReader(os.Stdin).ReadString('\n')
-				break
-			}
-
-			flights, err := flightsfunctions.GetAllFlights()
+			flights, err := flightsfunctions.GetFlightsWithFromAndDest(from, dest)
 			if err != nil {
 				fmt.Println("Flights weren't loaded:", err)
 				fmt.Println("Press Enter to continue...")
@@ -58,31 +55,60 @@ func UserInterface(user *models.Customer) {
 				break
 			}
 
-			var current_flight models.Flight
-			for i, v := range flights {
-				if v.FromWhere == from && v.Destination == dest && v.FlightTime == flightTime {
-					current_flight = flights[i]
-					break
-				}
-			}
+			flightsfunctions.PrintFlights(flights, "ID")
 
-			ticket, err := CreateTicket(current_flight)
-			if err != nil {
-				fmt.Println("Cannot create ticket to flight")
+			fmt.Println("Enter number of flights you want to order")
+			scanner.Scan()
+
+			if numOfFlight, err = strconv.Atoi(scanner.Text()); err != nil {
+				fmt.Println("Undefined num of flight:", err)
 				fmt.Println("Press Enter to continue...")
 				bufio.NewReader(os.Stdin).ReadString('\n')
 				break
 			}
 
-			ticket.Owner = *user
+			if numOfFlight <= 0 || numOfFlight > len(flights) {
+				fmt.Println("You entered:", numOfFlight, "but expected a number between 1 and:", len(flights))
+				fmt.Println("Press Enter to continue...")
+				bufio.NewReader(os.Stdin).ReadString('\n')
+				break
+			}
 
-			fmt.Println("Ticket:", ticket)
+			selectedFlight := flights[numOfFlight-1]
+			fmt.Println("You selected flight:", selectedFlight)
+
+			fmt.Print("Enter number of cost: ")
+			fmt.Scan(&costNum)
+
+			if costNum <= 0 || costNum > len(selectedFlight.FlightSeatsCosts) {
+				fmt.Println("You entered:", costNum, "but expected a number between 1 and:", len(selectedFlight.FlightSeatsCosts))
+				fmt.Println("Press Enter to continue...")
+				bufio.NewReader(os.Stdin).ReadString('\n')
+				break
+			}
+
+			ticket := CreateTicket(user.Id, selectedFlight, selectedFlight.FlightSeatsCosts[costNum], config.NamesSeats[costNum])
+			_, err = ticketsfunctions.SendTicketToTheCart(ticket)
+			if err != nil {
+				fmt.Println("Error:", err)
+				fmt.Println("Press Enter to continue...")
+				bufio.NewReader(os.Stdin).ReadString('\n')
+				break
+			}
 
 			fmt.Println("Press Enter to continur...")
 			bufio.NewReader(os.Stdin).ReadString('\n')
 
 		case "3":
 			fmt.Println("Show cart")
+			ticketsFromCart, err := ticketsfunctions.GetTicketFromCart()
+			if err != nil {
+				fmt.Println("Error:", err)
+			}
+
+			fmt.Println("Tickets in cart")
+
+			ticketsfunctions.PrintTickets(ticketsFromCart, "ID", "Owner")
 
 			fmt.Println("Press Enter to continue...")
 			bufio.NewReader(os.Stdin).ReadString('\n')
@@ -90,11 +116,39 @@ func UserInterface(user *models.Customer) {
 		case "4":
 			fmt.Println("Pay for cart")
 
+			card_number := service.GetInput(scanner, "Enter card number")
+			// нужно ввести какое то количесво бабок на карте
+			card_account, err := service.GetInt(scanner, "Enter card account")
+			if err != nil {
+				log.Println("Error:", err)
+				fmt.Println("Press Enter to continue...")
+				bufio.NewReader(os.Stdin).ReadString('\n')
+				break
+			}
+
+			err = ticketsfunctions.PayForTickets(card_number, card_account)
+			if err != nil {
+				fmt.Println("Error:", err)
+				fmt.Println("Press Enter to continue...")
+				bufio.NewReader(os.Stdin).ReadString('\n')
+				break
+			}
+
+			fmt.Println("Tickets payed successfully...")
+
 			fmt.Println("Press Enter to continue...")
 			bufio.NewReader(os.Stdin).ReadString('\n')
 
 		case "5":
 			fmt.Println("Manage tickets")
+
+			purchasedTickets, err := ticketsfunctions.GetPurchasedTickets(*user)
+			if err != nil {
+				fmt.Println("Error:", err)
+			}
+
+			fmt.Println("Yout purcahsed tickets")
+			ticketsfunctions.PrintTickets(purchasedTickets, "ID", "Owner")
 
 			fmt.Println("Press Enter to continue...")
 			bufio.NewReader(os.Stdin).ReadString('\n')

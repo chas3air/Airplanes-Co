@@ -32,7 +32,7 @@ func CustomersAdminInterface(user *models.Customer) {
 				break
 			}
 
-			customersfunctions.PrintCustomersTable(localCustomers)
+			customersfunctions.PrintCustomers(localCustomers)
 			fmt.Println("Press Enter to continue...")
 			bufio.NewReader(os.Stdin).ReadString('\n')
 
@@ -46,7 +46,7 @@ func CustomersAdminInterface(user *models.Customer) {
 				break
 			}
 
-			customersfunctions.PrintCustomersTable([]models.Customer{customer})
+			customersfunctions.PrintCustomers([]models.Customer{customer})
 			fmt.Println("Press Enter to continue...")
 			bufio.NewReader(os.Stdin).ReadString('\n')
 
@@ -66,7 +66,7 @@ func CustomersAdminInterface(user *models.Customer) {
 				break
 			}
 
-			customersfunctions.PrintCustomersTable([]models.Customer{customer})
+			customersfunctions.PrintCustomers([]models.Customer{customer})
 			fmt.Println("Press Enter to continue...")
 			bufio.NewReader(os.Stdin).ReadString('\n')
 

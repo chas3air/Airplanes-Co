@@ -41,7 +41,7 @@ func TestInsertTicketHandler(t *testing.T) {
 		Id:             uuid.New(),
 		FlightInfo:     models.Flight{},
 		Owner:          models.Customer{},
-		TicketCost:     150.75,
+		TicketCost:     150,
 		ClassOfService: "Economy",
 	}
 	body, _ := json.Marshal(ticket)
@@ -71,7 +71,7 @@ func TestUpdateTicketHandler(t *testing.T) {
 		Id:             uuid.New(),
 		FlightInfo:     models.Flight{},
 		Owner:          models.Customer{},
-		TicketCost:     150.75,
+		TicketCost:     150,
 		ClassOfService: "Economy",
 	}
 
@@ -112,7 +112,7 @@ func TestDeleteTicketHandler(t *testing.T) {
 		Id:             generatedId,
 		FlightInfo:     models.Flight{},
 		Owner:          models.Customer{},
-		TicketCost:     150.75,
+		TicketCost:     150,
 		ClassOfService: "Economy",
 	}
 	TicketsCart = append(TicketsCart, ticket)
@@ -143,7 +143,7 @@ func TestClearHandler(t *testing.T) {
 		Id:             uuid.New(),
 		FlightInfo:     models.Flight{},
 		Owner:          models.Customer{},
-		TicketCost:     150.75,
+		TicketCost:     150,
 		ClassOfService: "Economy",
 	}
 	TicketsCart = append(TicketsCart, ticket1)
@@ -152,7 +152,7 @@ func TestClearHandler(t *testing.T) {
 		Id:             uuid.New(),
 		FlightInfo:     models.Flight{},
 		Owner:          models.Customer{},
-		TicketCost:     200.00,
+		TicketCost:     200,
 		ClassOfService: "Business",
 	}
 	TicketsCart = append(TicketsCart, ticket2)

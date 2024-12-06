@@ -260,12 +260,56 @@ func CreateCustomer() (models.Customer, error) {
 	return customer, nil
 }
 
-func PrintCustomersTable(customers []models.Customer) {
-	fmt.Printf("| %-36s | %-10s | %-10s | %-10s | %-10s | %-10s |\n",
-		"ID", "Login", "Password", "Role", "Surname", "Name")
-	fmt.Println(strings.Repeat("-", 87))
+func PrintCustomers(customers []models.Customer, exclude ...string) {
+	excludeMap := make(map[string]struct{})
+	for _, col := range exclude {
+		excludeMap[col] = struct{}{}
+	}
+
+	headers := []string{"ID", "Login", "Role", "Surname", "Name"}
+	widths := []int{36, 15, 15, 15, 15}
+	var selectedHeaders []string
+	var selectedWidths []int
+
+	for i, header := range headers {
+		if _, ok := excludeMap[header]; !ok {
+			selectedHeaders = append(selectedHeaders, header)
+			selectedWidths = append(selectedWidths, widths[i])
+		}
+	}
+
+	for i, header := range selectedHeaders {
+		fmt.Printf("| %-*s ", selectedWidths[i], header)
+	}
+	fmt.Println("|")
+	fmt.Println(strings.Repeat("-", getTotalWidth(selectedWidths)))
 
 	for _, customer := range customers {
-		customer.Display()
+		if _, ok := excludeMap["ID"]; !ok {
+			fmt.Printf("| %-36s ", customer.Id.String())
+		}
+		if _, ok := excludeMap["Login"]; !ok {
+			fmt.Printf("| %-15s ", customer.Login)
+		}
+		if _, ok := excludeMap["Role"]; !ok {
+			fmt.Printf("| %-15s ", customer.Role)
+		}
+		if _, ok := excludeMap["Surname"]; !ok {
+			fmt.Printf("| %-15s ", customer.Surname)
+		}
+		if _, ok := excludeMap["Name"]; !ok {
+			fmt.Printf("| %-15s ", customer.Name)
+		}
+		fmt.Println("|")
 	}
+
+	fmt.Println(strings.Repeat("-", getTotalWidth(selectedWidths)))
+}
+
+func getTotalWidth(widths []int) int {
+	total := 0
+	for _, w := range widths {
+		total += w + 3
+	}
+	return total
 }

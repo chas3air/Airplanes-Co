@@ -189,60 +189,58 @@ func PrintFlights(flights []models.Flight, exclude ...string) {
 		excludeMap[col] = struct{}{}
 	}
 
-	headersNames := [6]string{"ID", "From", "Destination", "FlightTime", "Duration", "Costs"}
-	headersWidth := [6]int{36, 15, 15, 19, 15, 17}
+	headers := []string{"ID", "From", "Destination", "FlightTime", "Duration", "Costs"}
+	widths := []int{36, 15, 15, 19, 15, 17}
+	var selectedHeaders []string
+	var selectedWidths []int
 
-	counter := 0
-	for _, header := range headersNames {
-		fmt.Printf("| %-*s ", headersWidth[counter], header)
-		counter++
+	// Формируем выбранные заголовки и их ширину
+	for i, header := range headers {
+		if _, ok := excludeMap[header]; !ok {
+			selectedHeaders = append(selectedHeaders, header)
+			selectedWidths = append(selectedWidths, widths[i])
+		}
+	}
+
+	for i, header := range selectedHeaders {
+		fmt.Printf("| %-*s ", selectedWidths[i], header)
 	}
 	fmt.Println("|")
-	fmt.Println(strings.Repeat("-", 136))
+	fmt.Println(strings.Repeat("-", getTotalWidth(selectedWidths)))
 
 	for _, flight := range flights {
-		if _, ok := excludeMap["ID"]; ok {
-			fmt.Printf("| %-36s ", "None")
-		} else {
-			fmt.Printf("| %-36s ", flight.Id)
+		if _, ok := excludeMap["ID"]; !ok {
+			fmt.Printf("| %-36s ", flight.Id.String())
 		}
-
-		if _, ok := excludeMap["From"]; ok {
-			fmt.Printf("| %-15s ", "None")
-		} else {
+		if _, ok := excludeMap["From"]; !ok {
 			fmt.Printf("| %-15s ", flight.FromWhere)
 		}
-
-		if _, ok := excludeMap["Destination"]; ok {
-			fmt.Printf("| %-15s ", "None")
-		} else {
+		if _, ok := excludeMap["Destination"]; !ok {
 			fmt.Printf("| %-15s ", flight.Destination)
 		}
-
-		if _, ok := excludeMap["FlightTime"]; ok {
-			fmt.Printf("| %-19s ", "None")
-		} else {
+		if _, ok := excludeMap["FlightTime"]; !ok {
 			flightTime := flight.FlightTime.Format("2006-01-02 15:04:05")
 			fmt.Printf("| %-19s ", flightTime)
 		}
-
-		if _, ok := excludeMap["Duration"]; ok {
-			fmt.Printf("| %-15s ", "None")
-		} else {
+		if _, ok := excludeMap["Duration"]; !ok {
 			fmt.Printf("| %-15d ", flight.FlightDuration)
 		}
-
-		if _, ok := excludeMap["Costs"]; ok {
-			fmt.Printf("| %-17s ", "None")
-		} else {
+		if _, ok := excludeMap["Costs"]; !ok {
 			costs := fmt.Sprintf("%v", flight.FlightSeatsCosts)
 			fmt.Printf("| %-17s ", costs)
 		}
-
 		fmt.Println("|")
 	}
 
-	fmt.Println(strings.Repeat("-", 133))
+	fmt.Println(strings.Repeat("-", getTotalWidth(selectedWidths)))
+}
+
+func getTotalWidth(widths []int) int {
+	total := 0
+	for _, w := range widths {
+		total += w + 3
+	}
+	return total
 }
 
 func CreateFlight() (models.Flight, error) {
@@ -274,4 +272,20 @@ func CreateFlight() (models.Flight, error) {
 	log.Println("Id of flight generated on client:", flight.Id)
 
 	return flight, nil
+}
+
+func GetFlightsWithFromAndDest(from, dest string) ([]models.Flight, error) {
+	flights, err := GetAllFlights()
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]models.Flight, 0, len(flights))
+	for _, v := range flights {
+		if v.FromWhere == from && v.Destination == dest {
+			out = append(out, v)
+		}
+	}
+
+	return out, nil
 }

@@ -21,7 +21,7 @@ func Run() {
 	r.HandleFunc("/purchased-tickets", routes.GetPurchasedTicketsHandler).Methods(http.MethodGet)
 
 	go func() {
-		if err := http.ListenAndServe(":84", r); err != nil {
+		if err := http.ListenAndServe(":12010", r); err != nil {
 			log.Fatalf("Failed to start server: %v", err)
 		}
 	}()
