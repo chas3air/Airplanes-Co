@@ -10,14 +10,8 @@ type Ticket struct {
 	Id             uuid.UUID `json:"id" bson:"id"`
 	FlightInfo     Flight    `json:"flightInfo" bson:"flightInfo"`
 	Owner          Customer  `json:"owner" bson:"owner"`
-	ClassId        int       `json:"classId" bson:"classId"`
 	TicketCost     int       `json:"ticketCost" bson:"ticketCost"`
-	ClassOfService ClassName `json:"classOfService" bson:"classOfService"`
-}
-
-type ClassName struct {
-	Id    int    `json:"id" bson:"id"`
-	Title string `json:"title" bson:"title"`
+	ClassOfService string    `json:"classOfService" bson:"classOfService"`
 }
 
 func (t Ticket) String() string {

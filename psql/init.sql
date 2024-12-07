@@ -106,3 +106,8 @@ CREATE TRIGGER trg_tickets_delete
 AFTER DELETE ON Tickets
 FOR EACH ROW
 EXECUTE FUNCTION move_ticket_to_deleted();
+
+CREATE TABLE IF NOT EXISTS Airplanes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(50) NOT NULL
+);

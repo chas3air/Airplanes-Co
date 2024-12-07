@@ -10,7 +10,7 @@ type Ticket struct {
 	Id             uuid.UUID `json:"id" bson:"id"`
 	FlightInfo     Flight    `json:"flightInfo" bson:"flightInfo"`
 	Owner          Customer  `json:"owner" bson:"owner"`
-	TicketCost     int   `json:"ticketCost" bson:"ticketCost"`
+	TicketCost     int       `json:"ticketCost" bson:"ticketCost"`
 	ClassOfService string    `json:"classOfService" bson:"classOfService"`
 }
 

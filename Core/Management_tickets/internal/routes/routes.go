@@ -27,7 +27,7 @@ func GetTicketsHandler(w http.ResponseWriter, r *http.Request) {
 	resp, err := httpClient.Get(database_url)
 	if err != nil {
 		log.Println("Cannot send request to", database_url)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
 	defer resp.Body.Close()
