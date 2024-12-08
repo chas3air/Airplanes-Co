@@ -1,6 +1,6 @@
 package models
 
 type PayInfo struct {
-	Cost     int  `json:"cost"`
-	CardInfo Card `json:"card_info"`
+	Cost     int    `json:"cost"`
+	CardInfo string `json:"card_info"`
 }

@@ -10,11 +10,11 @@ import (
 func Run() {
 	r := mux.NewRouter()
 
-	r.HandleFunc("/management-flights/flights", routes.GetFlightsHandler).Methods(http.MethodGet)
-	r.HandleFunc("/management-flights/flights/{id}", routes.GetFlightByIdHandler).Methods(http.MethodGet)
-	r.HandleFunc("/management-flights/flights", routes.InsertFlightsHandler).Methods(http.MethodPost)
-	r.HandleFunc("/management-flights/flights", routes.UpdateFlightHandler).Methods(http.MethodPatch)
-	r.HandleFunc("/management-flights/flights/{id}", routes.DeleteFlightHandler).Methods(http.MethodDelete)
+	r.HandleFunc("/flights", routes.GetFlightsHandler).Methods(http.MethodGet)
+	r.HandleFunc("/flights/{id}", routes.GetFlightByIdHandler).Methods(http.MethodGet)
+	r.HandleFunc("/flights", routes.InsertFlightsHandler).Methods(http.MethodPost)
+	r.HandleFunc("/flights", routes.UpdateFlightHandler).Methods(http.MethodPatch)
+	r.HandleFunc("/flights/{id}", routes.DeleteFlightHandler).Methods(http.MethodDelete)
 
 	http.ListenAndServe(":12006", r)
 }

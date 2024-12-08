@@ -58,8 +58,6 @@ func CustomersAdminInterface(user *models.Customer) {
 				break
 			}
 
-			log.Println("Created customer:", customer.String())
-
 			customer, err = customersfunctions.InsertCustomer(customer)
 			if err != nil {
 				fmt.Println("Cannot insert customer")
@@ -74,22 +72,23 @@ func CustomersAdminInterface(user *models.Customer) {
 			fmt.Println("Update customers")
 
 			id := service.GetInput(scanner, "Enter id")
-
-			customer, err := customersfunctions.CreateCustomer()
-			if err != nil {
-				fmt.Println("Error creating customer")
-				break
-			}
 			parsedId, err := uuid.Parse(id)
 			if err != nil {
 				fmt.Println("Cannot parse string to uuid")
 				bufio.NewReader(os.Stdin).ReadString('\n')
 				break
 			}
+
+			customer, err := customersfunctions.CreateCustomer()
+			if err != nil {
+				fmt.Println("Error creating customer")
+				break
+			}
 			customer.Id = parsedId
 
 			_, err = customersfunctions.UpdateCustomer(customer)
 			if err != nil {
+				log.Println("Error:", err)
 				log.Println("Cannot update customer with id:", id)
 				bufio.NewReader(os.Stdin).ReadString('\n')
 				break
@@ -103,17 +102,14 @@ func CustomersAdminInterface(user *models.Customer) {
 			fmt.Println("Deleting customer")
 
 			id := service.GetInput(scanner, "Enter id")
-			customer, err := customersfunctions.DeleteCustomer(id)
+			_, err := customersfunctions.DeleteCustomer(id)
 			if err != nil {
+				log.Println("Error:", err)
 				log.Println("Cannot delete customer")
 				bufio.NewReader(os.Stdin).ReadString('\n')
 				break
 			}
-
-			fmt.Println(customer)
-			log.Println("Press Enter to cintinue...")
-			bufio.NewReader(os.Stdin).ReadString('\n')
-
+			
 		case "6":
 			fmt.Println("Logout")
 

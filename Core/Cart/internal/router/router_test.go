@@ -27,12 +27,12 @@ func TestGetTicketsHandler(t *testing.T) {
 		t.Errorf("GetTicketsHandler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	var tickets []models.Ticket
+	var tickets map[string][]models.Ticket
 	if err := json.Unmarshal(rr.Body.Bytes(), &tickets); err != nil {
 		t.Fatalf("Failed to unmarshal response: %v", err)
 	}
 	if len(tickets) != 0 {
-		t.Errorf("Expected empty ticket list, got %v", tickets)
+		t.Errorf("Expected empty ticket map, got %v", tickets)
 	}
 }
 
@@ -44,7 +44,13 @@ func TestInsertTicketHandler(t *testing.T) {
 		TicketCost:     150,
 		ClassOfService: "Economy",
 	}
-	body, _ := json.Marshal(ticket)
+	body, _ := json.Marshal(struct {
+		Id     string        `json:"id"`
+		Ticket models.Ticket `json:"ticket"`
+	}{
+		Id:     ticket.Id.String(),
+		Ticket: ticket,
+	})
 
 	req, err := http.NewRequest("POST", "/cart", bytes.NewBuffer(body))
 	if err != nil {
@@ -56,12 +62,12 @@ func TestInsertTicketHandler(t *testing.T) {
 
 	handler.ServeHTTP(rr, req)
 
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("InsertTicketHandler returned wrong status code: got %v want %v", status, http.StatusOK)
+	if status := rr.Code; status != http.StatusCreated {
+		t.Errorf("InsertTicketHandler returned wrong status code: got %v want %v", status, http.StatusCreated)
 	}
 
 	// Проверяем, что билет был добавлен
-	if len(TicketsCart) != 1 || TicketsCart[0].Id != ticket.Id {
+	if len(TicketsCart) != 1 || len(TicketsCart[ticket.Id.String()]) != 1 || TicketsCart[ticket.Id.String()][0].Id != ticket.Id {
 		t.Errorf("Expected ticket not found in cart: got %v", TicketsCart)
 	}
 }
@@ -75,12 +81,17 @@ func TestUpdateTicketHandler(t *testing.T) {
 		ClassOfService: "Economy",
 	}
 
-	TicketsCart = append(TicketsCart, initialTicket)
+	TicketsCart[initialTicket.Id.String()] = []models.Ticket{initialTicket}
 
 	updatedTicket := initialTicket
 	updatedTicket.TicketCost = 200.00
-	TicketsCart[0].TicketCost = 200.00
-	body, err := json.Marshal(updatedTicket)
+	body, err := json.Marshal(struct {
+		Id     string        `json:"id"`
+		Ticket models.Ticket `json:"ticket"`
+	}{
+		Id:     updatedTicket.Id.String(),
+		Ticket: updatedTicket,
+	})
 	if err != nil {
 		t.Fatal("Error marshaling updated ticket:", err)
 	}
@@ -99,13 +110,13 @@ func TestUpdateTicketHandler(t *testing.T) {
 		t.Errorf("UpdateTicketHandler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	if TicketsCart[0].TicketCost != 200.00 {
-		t.Errorf("Expected ticket cost to be updated: got %v", TicketsCart[0].TicketCost)
+	if TicketsCart[updatedTicket.Id.String()][0].TicketCost != 200.00 {
+		t.Errorf("Expected ticket cost to be updated: got %v", TicketsCart[updatedTicket.Id.String()][0].TicketCost)
 	}
 }
 
 func TestDeleteTicketHandler(t *testing.T) {
-	TicketsCart = make([]models.Ticket, 0)
+	TicketsCart = make(map[string][]models.Ticket)
 
 	generatedId := uuid.New()
 	ticket := models.Ticket{
@@ -115,7 +126,7 @@ func TestDeleteTicketHandler(t *testing.T) {
 		TicketCost:     150,
 		ClassOfService: "Economy",
 	}
-	TicketsCart = append(TicketsCart, ticket)
+	TicketsCart[generatedId.String()] = []models.Ticket{ticket}
 
 	req, err := http.NewRequest(http.MethodDelete, "/cart/"+generatedId.String(), nil)
 	if err != nil {
@@ -133,53 +144,7 @@ func TestDeleteTicketHandler(t *testing.T) {
 		t.Errorf("DeleteTicketHandler returned wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	if len(TicketsCart) != 0 {
-		t.Errorf("Expected ticket to be deleted, got %v", TicketsCart)
-	}
-}
-
-func TestClearHandler(t *testing.T) {
-	ticket1 := models.Ticket{
-		Id:             uuid.New(),
-		FlightInfo:     models.Flight{},
-		Owner:          models.Customer{},
-		TicketCost:     150,
-		ClassOfService: "Economy",
-	}
-	TicketsCart = append(TicketsCart, ticket1)
-
-	ticket2 := models.Ticket{
-		Id:             uuid.New(),
-		FlightInfo:     models.Flight{},
-		Owner:          models.Customer{},
-		TicketCost:     200,
-		ClassOfService: "Business",
-	}
-	TicketsCart = append(TicketsCart, ticket2)
-
-	req, err := http.NewRequest("DELETE", "/cart/clear", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(ClearHandler)
-
-	handler.ServeHTTP(rr, req)
-
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("ClearHandler returned wrong status code: got %v want %v", status, http.StatusOK)
-	}
-
-	var returnedTickets []models.Ticket
-	if err := json.Unmarshal(rr.Body.Bytes(), &returnedTickets); err != nil {
-		t.Fatalf("Failed to unmarshal response: %v", err)
-	}
-	if len(returnedTickets) != 2 {
-		t.Errorf("Expected 2 tickets to be returned, got %v", len(returnedTickets))
-	}
-
-	if len(TicketsCart) != 0 {
-		t.Errorf("Expected cart to be empty, got %v", len(TicketsCart))
+	if _, ok := TicketsCart[generatedId.String()]; ok {
+		t.Errorf("Expected ticket to be deleted, got %v", TicketsCart[generatedId.String()])
 	}
 }

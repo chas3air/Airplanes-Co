@@ -10,12 +10,12 @@ import (
 func Run() {
 	r := mux.NewRouter()
 
-	r.HandleFunc("/management-customers/customers", routes.GetCustomersHandler).Methods(http.MethodGet)
-	r.HandleFunc("/management-customers/customers/{id}/", routes.GetCustomerByIdHandler).Methods(http.MethodGet)
-	r.HandleFunc("/management-customers/customers/login", routes.GetCustomerByLoginAndPasswordHandler).Methods(http.MethodGet)
-	r.HandleFunc("/management-customers/customers", routes.InsertCustomerHandler).Methods(http.MethodPost)
-	r.HandleFunc("/management-customers/customers", routes.UpdateCustomerHandler).Methods(http.MethodPatch)
-	r.HandleFunc("/management-customers/customers/{id}", routes.DeleteCustomerHandler).Methods(http.MethodDelete)
+	r.HandleFunc("/customers", routes.GetCustomersHandler).Methods(http.MethodGet)
+	r.HandleFunc("/customers/{id}/", routes.GetCustomerByIdHandler).Methods(http.MethodGet)
+	r.HandleFunc("/customers/login", routes.GetCustomerByLoginAndPasswordHandler).Methods(http.MethodGet)
+	r.HandleFunc("/customers", routes.InsertCustomerHandler).Methods(http.MethodPost)
+	r.HandleFunc("/customers", routes.UpdateCustomerHandler).Methods(http.MethodPatch)
+	r.HandleFunc("/customers/{id}", routes.DeleteCustomerHandler).Methods(http.MethodDelete)
 
 	http.ListenAndServe(":12007", r)
 }

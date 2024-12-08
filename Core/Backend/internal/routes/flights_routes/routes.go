@@ -30,17 +30,16 @@ func GetFlightsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
-	log.Println("response code is:", resp.StatusCode)
+
+	log.Println("Response code is:", resp.StatusCode)
 
 	if resp.StatusCode == http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Println("Error:", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Println("Error reading response body:", err)
+			http.Error(w, "Error reading response body", http.StatusInternalServerError)
 			return
 		}
-
-		log.Println("backend send to client:", string(body))
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(resp.StatusCode)
@@ -53,7 +52,7 @@ func GetFlightsHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err = httpClient.Get(config.Management_flights_api_url)
 	if err != nil {
-		log.Println("Error:", err)
+		log.Println("Error fetching flights from management service:", err)
 		handleError(w, err)
 		return
 	}
@@ -61,8 +60,8 @@ func GetFlightsHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Error:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("Error reading response body:", err)
+		http.Error(w, "Error reading response body", http.StatusInternalServerError)
 		return
 	}
 
@@ -105,8 +104,8 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 	if resp.StatusCode == http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Println("Error:", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Println("Error reading response body:", err)
+			http.Error(w, "Error reading response body", http.StatusInternalServerError)
 			return
 		}
 
@@ -119,6 +118,7 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err = httpClient.Get(config.Management_flights_api_url + "/" + id)
 	if err != nil {
+		log.Println("Error fetching flight from management service:", err)
 		handleError(w, err)
 		return
 	}
@@ -126,8 +126,8 @@ func GetFlightByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Error:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		log.Println("Error reading response body:", err)
+		http.Error(w, "Error reading response body", http.StatusInternalServerError)
 		return
 	}
 
@@ -160,7 +160,7 @@ func InsertFlightHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := httpClient.Post(config.Management_flights_api_url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		log.Println("Cannot do post request to management flights")
+		log.Println("Cannot do post request to management flights:", err)
 		handleError(w, err)
 		return
 	}
@@ -168,8 +168,8 @@ func InsertFlightHandler(w http.ResponseWriter, r *http.Request) {
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Cannot read response body")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("Cannot read response body:", err)
+		http.Error(w, "Error reading response body", http.StatusInternalServerError)
 		return
 	}
 
@@ -184,8 +184,8 @@ func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
 
 	req, err := http.NewRequest(http.MethodPatch, config.Management_flights_api_url, r.Body)
 	if err != nil {
-		log.Println("Cannot create request")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("Cannot create request:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -204,8 +204,8 @@ func UpdateFlightHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Bad response: cannot read response body")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("Bad response: cannot read response body:", err)
+		http.Error(w, "Error reading response body", http.StatusInternalServerError)
 		return
 	}
 
@@ -229,8 +229,8 @@ func DeleteFlightHandler(w http.ResponseWriter, r *http.Request) {
 	rawURL := config.Management_flights_api_url + "/" + escapedID
 	req, err := http.NewRequest(http.MethodDelete, rawURL, nil)
 	if err != nil {
-		log.Println("Cannot create request")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("Cannot create request:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -243,8 +243,8 @@ func DeleteFlightHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Bad response: cannot read response body")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("Bad response: cannot read response body:", err)
+		http.Error(w, "Error reading response body", http.StatusInternalServerError)
 		return
 	}
 
@@ -259,7 +259,7 @@ func handleError(w http.ResponseWriter, err error) {
 		log.Println("Request timed out:", urlErr)
 		http.Error(w, "Request timed out", http.StatusGatewayTimeout)
 	} else {
-		log.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("Error occurred:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }

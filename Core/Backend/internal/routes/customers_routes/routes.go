@@ -26,21 +26,21 @@ func GetCustomersHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := httpClient.Get(config.Management_cache_api_url + "/" + config.KEY_FOR_CUSTOMERS)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error fetching customers from cache")
 		return
 	}
 	defer resp.Body.Close()
-	log.Println("response code is:", resp.StatusCode)
+
+	log.Println("Response code is:", resp.StatusCode)
 
 	if resp.StatusCode == http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Println("Error:", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(w, err, "Error reading response body from cache")
 			return
 		}
 
-		log.Println("backend send to client", string(body))
+		log.Println("Backend sending to client:", string(body))
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(resp.StatusCode)
@@ -53,16 +53,14 @@ func GetCustomersHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err = httpClient.Get(config.Management_customers_api_url)
 	if err != nil {
-		log.Println("Error:", err)
-		handleError(w, err)
+		handleError(w, err, "Error fetching customers from management service")
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Error:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Error reading response body from management service")
 		return
 	}
 
@@ -88,16 +86,15 @@ func GetCustomerByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, ok := mux.Vars(r)["id"]
 	if !ok {
-		log.Println("Bad request: cannot get id")
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		http.Error(w, "Bad request: cannot get id", http.StatusBadRequest)
 		return
 	}
 
-	escapeID := url.PathEscape(config.KEY_FOR_CUSTOMERS + ":" + id)
-	rawURL := config.Management_cache_api_url + "/" + escapeID
+	escapedID := url.PathEscape(config.KEY_FOR_CUSTOMERS + ":" + id)
+	rawURL := config.Management_cache_api_url + "/" + escapedID
 	resp, err := httpClient.Get(rawURL)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error fetching customer by id from cache")
 		return
 	}
 	defer resp.Body.Close()
@@ -105,8 +102,7 @@ func GetCustomerByIdHandler(w http.ResponseWriter, r *http.Request) {
 	if resp.StatusCode == http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Println("Error:", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handleError(w, err, "Error reading response body from cache")
 			return
 		}
 
@@ -119,15 +115,14 @@ func GetCustomerByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err = httpClient.Get(config.Management_customers_api_url + "/" + id + "/")
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error fetching customer by id from management service")
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Error:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Error reading response body from management service")
 		return
 	}
 
@@ -153,23 +148,21 @@ func InsertCustomerHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Println("Bad request: cannot read request body")
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		http.Error(w, "Bad request: cannot read request body", http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
 
 	resp, err := httpClient.Post(config.Management_customers_api_url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error inserting customer into management service")
 		return
 	}
 	defer resp.Body.Close()
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Cannot read response body")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Error reading response body from management service")
 		return
 	}
 
@@ -180,7 +173,38 @@ func InsertCustomerHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateCustomerHandler(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Not implemented", http.StatusNotImplemented)
+	log.Println("Update customer backend process...")
+
+	req, err := http.NewRequest(http.MethodPatch, config.Management_customers_api_url, r.Body)
+	if err != nil {
+		log.Println("Cannot create request:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		handleError(w, err, "Error updating customer into management service")
+		return
+	}
+	defer resp.Body.Close()
+
+	bs, err := io.ReadAll(resp.Body)
+	if err != nil {
+		handleError(w, err, "Error reading response body from management service")
+		return
+	}
+
+	if resp.StatusCode >= 400 {
+		log.Println("Response code:", resp.StatusCode)
+		http.Error(w, fmt.Errorf("response code: %v", resp.StatusCode).Error(), resp.StatusCode)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
+	w.Write(bs)
+	log.Println("Successfully updated customer.")
 }
 
 func DeleteCustomerHandler(w http.ResponseWriter, r *http.Request) {
@@ -188,37 +212,33 @@ func DeleteCustomerHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, ok := mux.Vars(r)["id"]
 	if !ok {
-		log.Println("Bad request: cannot get id")
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		http.Error(w, "Bad request: cannot get id", http.StatusBadRequest)
 		return
 	}
 
-	escapeID := url.PathEscape(id)
-	rawURL := config.Management_customers_api_url + "/" + escapeID
+	escapedID := url.PathEscape(id)
+	rawURL := config.Management_customers_api_url + "/" + escapedID
 	req, err := http.NewRequest(http.MethodDelete, rawURL, nil)
 	if err != nil {
-		log.Println("Cannot create request")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Error creating delete request")
 		return
 	}
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error deleting customer from management service")
 		return
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		log.Println("Response code:", resp.StatusCode)
-		http.Error(w, fmt.Errorf("response code: %v", resp.StatusCode).Error(), resp.StatusCode)
+	if resp.StatusCode >= 400 {
+		handleError(w, fmt.Errorf("unexpected response code: %v", resp.StatusCode), "Failed to delete customer")
 		return
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Bad response: cannot read response body")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Error reading response body from management service")
 		return
 	}
 
@@ -233,29 +253,26 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := httpClient.Post(config.Auth_api_url+"/auth/signup", "application/json", r.Body)
 	if err != nil {
-		log.Println("Error:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Error signing up customer")
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Println("Response code:", resp.StatusCode)
-		http.Error(w, fmt.Errorf("response code: %v", resp.StatusCode).Error(), resp.StatusCode)
+		handleError(w, fmt.Errorf("unexpected response code: %v", resp.StatusCode), "Sign up failed")
 		return
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Bad response: cannot read response body")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Error reading response body from sign up")
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
-	log.Println("Successfully deleted customer.")
+	log.Println("Successfully signed up customer.")
 }
 
 func SignInHandler(w http.ResponseWriter, r *http.Request) {
@@ -264,42 +281,39 @@ func SignInHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	login := r.Form.Get("login")
 	password := r.Form.Get("password")
-	log.Println("Received login and password from url:", login, "and", password)
+	log.Println("Received login and password from URL:", login, "and", password)
 
 	url := fmt.Sprintf("%s/auth/signin?login=%s&password=%s", config.Auth_api_url, login, password)
 	resp, err := httpClient.Get(url)
 	if err != nil {
-		log.Println("Error:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Error signing in customer")
 		return
 	}
 	defer resp.Body.Close()
 	log.Println("Response code:", resp.StatusCode)
 
 	if resp.StatusCode != http.StatusOK {
-		http.Error(w, fmt.Errorf("response code: %v", resp.StatusCode).Error(), resp.StatusCode)
+		handleError(w, fmt.Errorf("unexpected response code: %v", resp.StatusCode), "Sign in failed")
 		return
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Error:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Error reading response body from sign in")
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
-	log.Println("Successfully sign in")
+	log.Println("Successfully signed in customer.")
 }
 
-func handleError(w http.ResponseWriter, err error) {
+func handleError(w http.ResponseWriter, err error, context string) {
+	log.Println(context, ":", err)
 	if urlErr, ok := err.(*url.Error); ok && urlErr.Timeout() {
-		log.Println("Request timed out:", urlErr)
 		http.Error(w, "Request timed out", http.StatusGatewayTimeout)
 	} else {
-		log.Println(err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }

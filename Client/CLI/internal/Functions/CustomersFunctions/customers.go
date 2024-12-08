@@ -23,7 +23,7 @@ var limitTime = service.GetLimitTime()
 // GetAllCustomers retrieves a list of all customers from the API.
 // Returns an array of customers and an error if the request fails.
 func GetAllCustomers() ([]models.Customer, error) {
-	resp, err := http.Get(config.Backend_url + "/customers/get")
+	resp, err := http.Get(config.Backend_url + "/customers")
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func GetAllCustomers() ([]models.Customer, error) {
 // GetCustomerById retrieves a customer by their ID from the backend service.
 // Returns the customer details or an error if the request fails or the customer is not found.
 func GetCustomerById(id string) (models.Customer, error) {
-	resp, err := http.Get(config.Backend_url + "/customers/get/" + id)
+	resp, err := http.Get(config.Backend_url + "/customers/" + id)
 	if err != nil {
 		return models.Customer{}, err
 	}
@@ -79,7 +79,7 @@ func InsertCustomer(customer models.Customer) (models.Customer, error) {
 		Timeout: limitTime,
 	}
 
-	resp, err := client.Post(config.Backend_url+"/customers/insert", "application/json", bytes.NewBuffer(bs))
+	resp, err := client.Post(config.Backend_url+"/customers", "application/json", bytes.NewBuffer(bs))
 	if err != nil {
 		fmt.Println("Error sending request")
 		return models.Customer{}, err
@@ -114,7 +114,7 @@ func UpdateCustomer(customer models.Customer) (models.Customer, error) {
 		fmt.Println("Error marshaling customer:", err)
 		return models.Customer{}, err
 	}
-	req, err := http.NewRequest(http.MethodPatch, config.Backend_url+"/customers/update", bytes.NewBuffer(bs))
+	req, err := http.NewRequest(http.MethodPatch, config.Backend_url+"/customers", bytes.NewBuffer(bs))
 	if err != nil {
 		return models.Customer{}, err
 	}
@@ -151,7 +151,7 @@ func UpdateCustomer(customer models.Customer) (models.Customer, error) {
 // DeleteCustomer removes a customer from the system by their ID.
 // Returns the deleted customer and an error if there was a problem.
 func DeleteCustomer(id string) (models.Customer, error) {
-	req, err := http.NewRequest(http.MethodDelete, config.Backend_url+"/customers/delete/"+id, nil)
+	req, err := http.NewRequest(http.MethodDelete, config.Backend_url+"/customers/"+id, nil)
 	if err != nil {
 		return models.Customer{}, err
 	}
@@ -254,8 +254,6 @@ func CreateCustomer() (models.Customer, error) {
 		Surname:  surname,
 		Name:     name,
 	}
-
-	log.Println("Id of customer generated on client:", customer.Id)
 
 	return customer, nil
 }

@@ -13,7 +13,8 @@ type Flight struct {
 	Destination      string    `json:"destination" bson:"destination"`
 	FlightTime       time.Time `json:"flightTime" bson:"flightTime"`
 	FlightDuration   int       `json:"flightDuration" bson:"flightDuration"`
-	FlightSeatsCosts []int    `json:"flightSeatsCost" bson:"flightSeatsCost"`
+	FlightSeatsCosts []int     `json:"flightSeatsCost" bson:"flightSeatsCost"`
+	Airplane         uuid.UUID `json:"airplane"`
 }
 
 func (f Flight) String() string {

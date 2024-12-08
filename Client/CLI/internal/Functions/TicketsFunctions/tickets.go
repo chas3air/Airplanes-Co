@@ -11,6 +11,7 @@ import (
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/config"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/service"
+	"github.com/google/uuid"
 )
 
 var limitTime = service.GetLimitTime()
@@ -25,7 +26,7 @@ func SendTicketToTheCart(ticket models.Ticket) (models.Ticket, error) {
 		Timeout: limitTime,
 	}
 
-	resp, err := httpClient.Post(config.Backend_url+"/cart", "application/json", bytes.NewBuffer(bs))
+	resp, err := httpClient.Post(config.Backend_url+"/cart"+"?ownerId="+ticket.Owner.Id.String(), "application/json", bytes.NewBuffer(bs))
 	if err != nil {
 		return models.Ticket{}, fmt.Errorf("error sending request: %w", err)
 	}
@@ -43,13 +44,13 @@ func SendTicketToTheCart(ticket models.Ticket) (models.Ticket, error) {
 	return ticket, nil
 }
 
-func GetTicketFromCart() ([]models.Ticket, error) {
+func GetTicketFromCart(userId uuid.UUID) ([]models.Ticket, error) {
 	var tickets []models.Ticket
 	httpClient := &http.Client{
 		Timeout: limitTime,
 	}
 
-	resp, err := httpClient.Get(config.Backend_url + "/cart")
+	resp, err := httpClient.Get(config.Backend_url + "/cart?ownerId=" + userId.String())
 	if err != nil {
 		return nil, nil
 	}
@@ -148,13 +149,8 @@ func getTotalWidth(widths []int) int {
 	return total
 }
 
-func PayForTickets(card_number string, card_account int) error {
-	card := models.Card{
-		Number:  card_number,
-		Balance: card_account,
-	}
-
-	bs, err := json.Marshal(card)
+func PayForTickets(card_number string) error {
+	bs, err := json.Marshal(card_number)
 	if err != nil {
 		return err
 	}

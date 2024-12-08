@@ -22,26 +22,26 @@ var httpClient = &http.Client{
 	Timeout: limitTime,
 }
 
-//TODO: переделать
 func GetTicketsHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Get tickets backend process...")
 
 	resp, err := httpClient.Get(config.Management_cache_api_url + "/" + config.KEY_FOR_TICKETS)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error fetching tickets from cache")
 		return
 	}
 	defer resp.Body.Close()
-	log.Println("response code is:", resp.StatusCode)
+
+	log.Println("Response code is:", resp.StatusCode)
 
 	if resp.StatusCode == http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			handleError(w, err)
+			handleError(w, err, "Error reading response body from cache")
 			return
 		}
 
-		log.Println("backend sent to client:", string(body))
+		log.Println("Backend sent to client:", string(body))
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(resp.StatusCode)
@@ -54,27 +54,69 @@ func GetTicketsHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err = httpClient.Get(config.Management_tickets_api_url)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error fetching tickets from management service")
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Println("Failed to fetch tickets from management service:", resp.StatusCode)
-		http.Error(w, "Failed to fetch tickets", resp.StatusCode)
+		handleError(w, fmt.Errorf("failed to fetch tickets from management service: %v", resp.StatusCode), "Failed to fetch tickets")
 		return
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	var tickets []models.Ticket
+	err = json.NewDecoder(resp.Body).Decode(&tickets)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "cannot parse response body to tickets slice")
+		return
+	}
+
+	for i, v := range tickets {
+		log.Println("FlightId:", v.FlightInfo.Id.String())
+
+		resp, err := httpClient.Get(config.Management_flights_api_url + "/" + v.FlightInfo.Id.String())
+		if err != nil {
+			handleError(w, err, "cannor get ticket flight with id")
+			return
+		}
+		defer resp.Body.Close()
+
+		var flight models.Flight
+		err = json.NewDecoder(resp.Body).Decode(&flight)
+		if err != nil {
+			handleError(w, err, "cannot parse response body to flight object")
+			return
+		}
+		///
+		log.Println("OwnerId:", v.Owner.Id.String())
+		resp, err = httpClient.Get(config.Management_customers_api_url + "/" + v.Owner.Id.String() + "/")
+		if err != nil {
+			handleError(w, err, "cannot ticket owner with id")
+			return
+		}
+		defer resp.Body.Close()
+
+		var customer models.Customer
+		err = json.NewDecoder(resp.Body).Decode(&customer)
+		if err != nil {
+			handleError(w, err, "cannot parse response body to customer object")
+			return
+		}
+
+		tickets[i].FlightInfo = flight
+		tickets[i].Owner = customer
+	}
+
+	bs, err := json.Marshal(tickets)
+	if err != nil {
+		handleError(w, err, "cannot marshall ticket slice to byte string")
 		return
 	}
 
 	message := models.Message{
 		Key: config.KEY_FOR_TICKETS,
 		Value: models.CacheItem{
-			Value:      string(body),
+			Value:      string(bs),
 			Expiration: config.VALUE_EXPIRATION_TIME,
 			SetedTime:  time.Now(),
 		},
@@ -84,7 +126,7 @@ func GetTicketsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	w.Write(bs)
 	log.Println("Successfully fetched all tickets from management service.")
 }
 
@@ -93,15 +135,14 @@ func GetTicketByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, ok := mux.Vars(r)["id"]
 	if !ok {
-		log.Println("Bad request: cannot get id")
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		handleError(w, fmt.Errorf("bad request: cannot get id"), "Bad request")
 		return
 	}
 	escapedID := url.PathEscape(config.KEY_FOR_TICKETS + ":" + id)
 	rawURL := config.Management_cache_api_url + "/" + escapedID
 	resp, err := httpClient.Get(rawURL)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error fetching ticket by id from cache")
 		return
 	}
 	defer resp.Body.Close()
@@ -109,7 +150,7 @@ func GetTicketByIdHandler(w http.ResponseWriter, r *http.Request) {
 	if resp.StatusCode == http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			handleError(w, err)
+			handleError(w, err, "Error reading response body from cache")
 			return
 		}
 
@@ -122,27 +163,63 @@ func GetTicketByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err = httpClient.Get(config.Management_tickets_api_url + "/" + id)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error fetching ticket by id from management service")
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Println("Failed to fetch ticket from management service:", resp.StatusCode)
-		http.Error(w, "Failed to fetch ticket", resp.StatusCode)
+		handleError(w, fmt.Errorf("failed to fetch ticket from management service: %v", resp.StatusCode), "Failed to fetch ticket")
 		return
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	var ticket models.Ticket
+	err = json.NewDecoder(resp.Body).Decode(&ticket)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "cannot parse response body to tickets slice")
+		return
+	}
+
+	log.Println("FlightId:", ticket.FlightInfo.Id.String())
+	resp, err = httpClient.Get(config.Management_flights_api_url + "/" + ticket.FlightInfo.Id.String())
+	if err != nil {
+		handleError(w, err, "cannor get ticket flight with id: "+ticket.FlightInfo.Id.String())
+		return
+	}
+	defer resp.Body.Close()
+
+	var flight models.Flight
+	err = json.NewDecoder(resp.Body).Decode(&flight)
+	if err != nil {
+		handleError(w, err, "cannot parse response body to flight object")
+		return
+	}
+	///
+	log.Println("OwnerId:", ticket.Owner.Id.String())
+	resp, err = httpClient.Get(config.Management_customers_api_url + "/" + ticket.Owner.Id.String() + "/")
+	if err != nil {
+		handleError(w, err, "cannot get ticket owner with id: "+ticket.Owner.Id.String())
+		return
+	}
+	defer resp.Body.Close()
+
+	var customer models.Customer
+	err = json.NewDecoder(resp.Body).Decode(&customer)
+	if err != nil {
+		handleError(w, err, "cannot parse response body to customer object")
+		return
+	}
+
+	bs, err := json.Marshal(ticket)
+	if err != nil {
+		handleError(w, err, "cannot marshal ticket to byte string")
 		return
 	}
 
 	message := models.Message{
 		Key: config.KEY_FOR_TICKETS,
 		Value: models.CacheItem{
-			Value:      string(body),
+			Value:      string(bs),
 			Expiration: config.VALUE_EXPIRATION_TIME,
 			SetedTime:  time.Now(),
 		},
@@ -152,7 +229,7 @@ func GetTicketByIdHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	w.Write(bs)
 	log.Println("Successfully fetched ticket by id from management service.")
 }
 
@@ -161,28 +238,26 @@ func InsertTicketHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Println("Bad request: cannot read request body")
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		handleError(w, err, "Bad request: cannot read request body")
 		return
 	}
 	defer r.Body.Close()
 
 	resp, err := httpClient.Post(config.Management_tickets_api_url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error inserting ticket into management service")
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		log.Println("Failed to insert ticket:", resp.StatusCode)
-		http.Error(w, "Failed to insert ticket", resp.StatusCode)
+		handleError(w, fmt.Errorf("failed to insert ticket: %v", resp.StatusCode), "Failed to insert ticket")
 		return
 	}
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error reading response body from management service")
 		return
 	}
 
@@ -197,29 +272,33 @@ func InsertTicketHandler(w http.ResponseWriter, r *http.Request) {
 func UpdateTicketHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Update ticket backend process...")
 
-	req, err := http.NewRequest(http.MethodPatch, config.Management_tickets_api_url, r.Body)
+	id, ok := mux.Vars(r)["id"]
+	if !ok {
+		handleError(w, fmt.Errorf("bad request: cannot get id"), "Bad request")
+		return
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, config.Management_tickets_api_url+"/"+id, r.Body)
 	if err != nil {
-		log.Println("Cannot create request")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Cannot create request")
 		return
 	}
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error updating ticket in management service")
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		log.Println("Response code:", resp.StatusCode)
-		http.Error(w, fmt.Errorf("response code: %v", resp.StatusCode).Error(), resp.StatusCode)
+		handleError(w, fmt.Errorf("failed to update ticket: %v", resp.StatusCode), "Failed to update ticket")
 		return
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error reading response body from management service")
 		return
 	}
 
@@ -236,8 +315,7 @@ func DeleteTicketHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, ok := mux.Vars(r)["id"]
 	if !ok {
-		log.Println("Bad request: cannot get id")
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		handleError(w, fmt.Errorf("bad request: cannot get id"), "Bad request")
 		return
 	}
 
@@ -245,27 +323,25 @@ func DeleteTicketHandler(w http.ResponseWriter, r *http.Request) {
 	rawURL := config.Management_tickets_api_url + "/" + escapedID
 	req, err := http.NewRequest(http.MethodDelete, rawURL, nil)
 	if err != nil {
-		log.Println("Cannot create request")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Cannot create request")
 		return
 	}
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error deleting ticket from management service")
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		log.Println("Failed to delete ticket:", resp.StatusCode)
-		http.Error(w, "Failed to delete ticket", resp.StatusCode)
+		handleError(w, fmt.Errorf("failed to delete ticket: %v", resp.StatusCode), "Failed to delete ticket")
 		return
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error reading response body from management service")
 		return
 	}
 
@@ -283,52 +359,46 @@ func InsertTicketToCartHandler(w http.ResponseWriter, r *http.Request) {
 	var ticket models.Ticket
 	err := json.NewDecoder(r.Body).Decode(&ticket)
 	if err != nil {
-		log.Println("Bad request: cannot read request body")
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		handleError(w, err, "Bad request: cannot read request body")
 		return
 	}
 	defer r.Body.Close()
 
 	resp, err := httpClient.Get(config.Management_customers_api_url + "/" + ticket.Owner.Id.String() + "/")
 	if err != nil {
-		log.Println("Error fetching customer data:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Error fetching customer data")
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Println("Failed to fetch customer data:", resp.StatusCode)
-		http.Error(w, "Failed to fetch customer data", resp.StatusCode)
+		handleError(w, fmt.Errorf("failed to fetch customer data: %v", resp.StatusCode), "Failed to fetch customer data")
 		return
 	}
 
 	var customer models.Customer
 	err = json.NewDecoder(resp.Body).Decode(&customer)
 	if err != nil {
-		log.Println("Bad response: cannot read response body")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Error reading response body of customer")
 		return
 	}
 	ticket.Owner = customer
 
 	bs, err := json.Marshal(ticket)
 	if err != nil {
-		log.Println("Cannot marshall object to json")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Cannot marshal object to JSON")
 		return
 	}
 
 	resp, err = httpClient.Post(config.Cart_api_url, "application/json", bytes.NewBuffer(bs))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		handleError(w, err, "Error inserting ticket to cart")
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		log.Println("Failed to insert ticket to cart:", resp.StatusCode)
-		http.Error(w, "Failed to insert ticket to cart", resp.StatusCode)
+		handleError(w, fmt.Errorf("failed to insert ticket to cart: %v", resp.StatusCode), "Failed to insert ticket to cart")
 		return
 	}
 
@@ -336,7 +406,7 @@ func InsertTicketToCartHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(resp.StatusCode)
 	_, err = w.Write(bs)
 	if err != nil {
-		log.Println("Error writing response:", err)
+		handleError(w, err, "Error writing response")
 		return
 	}
 	log.Println("Successfully inserted ticket to cart.")
@@ -347,22 +417,24 @@ func InsertTicketToCartHandler(w http.ResponseWriter, r *http.Request) {
 func GetTicketsFromCartHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching all tickets from cart backend process...")
 
-	resp, err := httpClient.Get(config.Cart_api_url)
+	ownerId := r.URL.Query().Get("ownerId")
+	log.Println("ownerId:", ownerId)
+
+	resp, err := httpClient.Get(config.Cart_api_url + "/" + ownerId)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error fetching tickets from cart")
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Println("Failed to fetch tickets from management service:", resp.StatusCode)
-		http.Error(w, "Failed to fetch tickets", resp.StatusCode)
+		handleError(w, fmt.Errorf("failed to fetch tickets from cart: %v", resp.StatusCode), "Failed to fetch tickets")
 		return
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error reading response body from cart")
 		return
 	}
 
@@ -388,34 +460,77 @@ func GetPurchasedTicketHandler(w http.ResponseWriter, r *http.Request) {
 
 	ownerId := r.URL.Query().Get("ownerId")
 	if ownerId == "" {
-		log.Println("Bad request: ownerId is required")
-		http.Error(w, "ownerId is required", http.StatusBadRequest)
+		handleError(w, fmt.Errorf("bad request: ownerId is required"), "Bad request")
 		return
 	}
 
 	resp, err := httpClient.Get(config.Purchased_tickets_api_url + "?ownerId=" + ownerId)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error fetching purchased tickets")
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		log.Println("Received response:", resp.Status)
-		http.Error(w, "Error response code", resp.StatusCode)
+		handleError(w, fmt.Errorf("error response code: %v", resp.StatusCode), "Error fetching purchased tickets")
 		return
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	var tickets []models.Ticket
+	err = json.NewDecoder(resp.Body).Decode(&tickets)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "cannot parse response body to tickets slice")
+		return
+	}
+
+	for i, v := range tickets {
+		log.Println("FlightId:", v.FlightInfo.Id.String())
+
+		resp, err := httpClient.Get(config.Management_flights_api_url + "/" + v.FlightInfo.Id.String())
+		if err != nil {
+			handleError(w, err, "cannor get ticket flight with id")
+			return
+		}
+		defer resp.Body.Close()
+
+		var flight models.Flight
+		err = json.NewDecoder(resp.Body).Decode(&flight)
+		if err != nil {
+			handleError(w, err, "cannot parse response body to flight object")
+			return
+		}
+		log.Println(flight.String())
+		///
+		log.Println("OwnerId:", v.Owner.Id.String())
+		resp, err = httpClient.Get(config.Management_customers_api_url + "/" + v.Owner.Id.String() + "/")
+		if err != nil {
+			handleError(w, err, "cannot ticket owner with id")
+			return
+		}
+		defer resp.Body.Close()
+
+		var customer models.Customer
+		err = json.NewDecoder(resp.Body).Decode(&customer)
+		if err != nil {
+			handleError(w, err, "cannot parse response body to customer object")
+			return
+		}
+		log.Println(customer.String())
+
+		tickets[i].FlightInfo = flight
+		tickets[i].Owner = customer
+	}
+
+	bs, err := json.Marshal(tickets)
+	if err != nil {
+		handleError(w, err, "cannot marshall ticket slice to byte string")
 		return
 	}
 
 	message := models.Message{
 		Key: config.KEY_FOR_TICKETS,
 		Value: models.CacheItem{
-			Value:      string(body),
+			Value:      string(bs),
 			Expiration: config.VALUE_EXPIRATION_TIME,
 			SetedTime:  time.Now(),
 		},
@@ -425,86 +540,76 @@ func GetPurchasedTicketHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(body)
+	w.Write(bs)
 	log.Println("Successfully fetched all purchased tickets.")
 }
 
 func PayForTickets(w http.ResponseWriter, r *http.Request) {
 	log.Println("Pay for tickets backend process...")
 
-	var card_info models.Card
-	err := json.NewDecoder(r.Body).Decode(&card_info)
+	var cardInfo string
+	err := json.NewDecoder(r.Body).Decode(&cardInfo)
 	if err != nil {
-		log.Println("Bad request: cannot parse body to cardInfo")
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		handleError(w, err, "Bad request: cannot parse body to cardInfo")
 		return
 	}
 
 	payInfo := models.PayInfo{
 		Cost:     66,
-		CardInfo: card_info,
+		CardInfo: cardInfo,
 	}
 	body, err := json.Marshal(payInfo)
 	if err != nil {
-		log.Println("Cannot marshall ticket")
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		handleError(w, err, "Cannot marshal ticket")
 		return
 	}
 
 	resp, err := httpClient.Post(config.Payment_api_url+"/pay", "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error processing payment")
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		log.Println("received response: ", resp.Status)
-		http.Error(w, "Error response code", resp.StatusCode)
+		handleError(w, fmt.Errorf("error response code: %v", resp.StatusCode), "Payment error")
 		return
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, config.Cart_api_url+"/clear", nil)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Cannot create request to clear cart")
 		return
 	}
 
 	resp, err = httpClient.Do(req)
 	if err != nil {
-		handleError(w, err)
+		handleError(w, err, "Error clearing cart")
 		return
 	}
 	defer resp.Body.Close()
 
-	/*
-		тут нужно переделать dal-tickets так чтобы он принимал не одно значение а несколько
-	*/
-
 	if resp.StatusCode >= 400 {
-		log.Println("received response: ", resp.Status)
-		http.Error(w, "Error response code", resp.StatusCode)
+		handleError(w, fmt.Errorf("error response code: %v", resp.StatusCode), "Error clearing cart")
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
-	log.Println("Successfully fetched all tickets from cart.")
+	log.Println("Successfully processed payment and cleared the cart.")
 }
 
-func handleError(w http.ResponseWriter, err error) {
+func handleError(w http.ResponseWriter, err error, context string) {
+	log.Println(context, ":", err)
 	if urlErr, ok := err.(*url.Error); ok {
 		if urlErr.Timeout() {
-			log.Println("Request timed out:", urlErr)
 			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
 		} else {
-			log.Println("Service unavailable:", urlErr)
 			http.Error(w, "Service unavailable", http.StatusServiceUnavailable)
 		}
 	} else {
-		log.Println("General error:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
 

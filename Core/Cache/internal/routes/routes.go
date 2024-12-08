@@ -89,8 +89,6 @@ func SetItemHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	log.Println(string(body))
-
 	var message models.Message
 	err = json.Unmarshal(body, &message)
 	if err != nil {
@@ -104,7 +102,7 @@ func SetItemHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	log.Printf("Successfully set item in cache with key: %s, value: %v\n", message.Key, message.Value)
+	log.Printf("Successfully set item in cache with key: %s\n", message.Key)
 }
 
 // DeleteItemHandler removes an item from the cache using the specified key.

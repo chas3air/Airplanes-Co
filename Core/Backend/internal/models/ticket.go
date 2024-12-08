@@ -15,6 +15,6 @@ type Ticket struct {
 }
 
 func (t Ticket) String() string {
-	return fmt.Sprintf("Ticket ID: %d, flightInfo: %v, Owner: %v, Cost: %d",
+	return fmt.Sprintf("Ticket ID: %d, flightInfo: %v, Owner: %v, Cost: %d, ClassOfService",
 		t.Id, t.FlightInfo, t.Owner, t.TicketCost)
 }

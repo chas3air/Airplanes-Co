@@ -3,7 +3,6 @@ package ui
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"time"
@@ -101,7 +100,7 @@ func UserInterface(user *models.Customer) {
 
 		case "3":
 			fmt.Println("Show cart")
-			ticketsFromCart, err := ticketsfunctions.GetTicketFromCart()
+			ticketsFromCart, err := ticketsfunctions.GetTicketFromCart(user.Id)
 			if err != nil {
 				fmt.Println("Error:", err)
 			}
@@ -114,19 +113,12 @@ func UserInterface(user *models.Customer) {
 			bufio.NewReader(os.Stdin).ReadString('\n')
 
 		case "4":
+			//TODO: тут надо написать функцию которая получает общую сумму билетов клиента
 			fmt.Println("Pay for cart")
 
 			card_number := service.GetInput(scanner, "Enter card number")
-			// нужно ввести какое то количесво бабок на карте
-			card_account, err := service.GetInt(scanner, "Enter card account")
-			if err != nil {
-				log.Println("Error:", err)
-				fmt.Println("Press Enter to continue...")
-				bufio.NewReader(os.Stdin).ReadString('\n')
-				break
-			}
 
-			err = ticketsfunctions.PayForTickets(card_number, card_account)
+			err := ticketsfunctions.PayForTickets(card_number)
 			if err != nil {
 				fmt.Println("Error:", err)
 				fmt.Println("Press Enter to continue...")

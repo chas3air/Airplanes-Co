@@ -63,7 +63,7 @@ func GetTicketById(w http.ResponseWriter, r *http.Request) {
 
 	id := mux.Vars(r)["id"]
 
-	entity, err := TicketsDB.GetById(ctx, id)
+	entity, err := TicketsDB.GetAll(ctx)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			log.Println("Request timed out")
@@ -76,11 +76,18 @@ func GetTicketById(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	ticket, ok := entity.(models.Ticket)
+	tickets, ok := entity.([]models.Ticket)
 	if !ok {
 		log.Println("Invalid data type")
 		http.Error(w, "Invalid data type", http.StatusInternalServerError)
 		return
+	}
+
+	var ticket models.Ticket
+	for _, t := range tickets {
+		if t.Id.String() == id {
+			ticket = t
+		}
 	}
 
 	bs, err := json.Marshal(ticket)

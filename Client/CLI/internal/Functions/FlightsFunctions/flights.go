@@ -23,7 +23,7 @@ var limitTime = service.GetLimitTime()
 // GetAllFlights retrieves a list of all flights from the API.
 // Returns an array of flights and an error if the request fails.
 func GetAllFlights() ([]models.Flight, error) {
-	resp, err := http.Get(config.Backend_url + "/flights/get")
+	resp, err := http.Get(config.Backend_url + "/flights")
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func GetAllFlights() ([]models.Flight, error) {
 // GetFlightById retrieves a flight by its ID from the backend service.
 // Returns the flight details or an error if the request fails or the flight is not found.
 func GetFlightById(id string) (models.Flight, error) {
-	resp, err := http.Get(config.Backend_url + "/flights/get/" + id)
+	resp, err := http.Get(config.Backend_url + "/flights/" + id)
 	if err != nil {
 		log.Println("Error:", err)
 		return models.Flight{}, err
@@ -80,7 +80,7 @@ func InsertFlight(flight models.Flight) (models.Flight, error) {
 		Timeout: limitTime,
 	}
 
-	resp, err := client.Post(config.Backend_url+"/flights/insert", "application/json", bytes.NewBuffer(bs))
+	resp, err := client.Post(config.Backend_url+"/flights", "application/json", bytes.NewBuffer(bs))
 	if err != nil {
 		return models.Flight{}, err
 	}
@@ -115,7 +115,7 @@ func UpdateFlight(flight models.Flight) (models.Flight, error) {
 		return models.Flight{}, err
 	}
 
-	req, err := http.NewRequest(http.MethodPatch, config.Backend_url+"/flights/update", bytes.NewBuffer(bs))
+	req, err := http.NewRequest(http.MethodPatch, config.Backend_url+"/flights", bytes.NewBuffer(bs))
 	if err != nil {
 		return models.Flight{}, err
 	}
@@ -154,7 +154,7 @@ func UpdateFlight(flight models.Flight) (models.Flight, error) {
 // DeleteFlight removes a flight from the system by its ID.
 // Returns the deleted flight and an error if there was a problem.
 func DeleteFlight(id string) (models.Flight, error) {
-	req, err := http.NewRequest(http.MethodDelete, config.Backend_url+"/flights/delete/"+id, nil)
+	req, err := http.NewRequest(http.MethodDelete, config.Backend_url+"/flights/"+id, nil)
 	if err != nil {
 		return models.Flight{}, err
 	}
@@ -194,7 +194,6 @@ func PrintFlights(flights []models.Flight, exclude ...string) {
 	var selectedHeaders []string
 	var selectedWidths []int
 
-	// Формируем выбранные заголовки и их ширину
 	for i, header := range headers {
 		if _, ok := excludeMap[header]; !ok {
 			selectedHeaders = append(selectedHeaders, header)
@@ -259,6 +258,21 @@ func CreateFlight() (models.Flight, error) {
 	if err != nil {
 		return models.Flight{}, err
 	}
+	planeId_s := service.GetInput(scanner, "Enter planeID")
+	planeId, err := uuid.Parse(planeId_s)
+	if err != nil {
+		return models.Flight{}, err
+	}
+
+	costs := make([]int, 0, 4)
+	for len(costs) != 4 {
+		num, err := service.GetInt(scanner, "Enter cost")
+		if err != nil {
+			log.Println("Error number")
+			continue
+		}
+		costs = append(costs, num)
+	}
 
 	flight := models.Flight{
 		Id:               uuid.New(),
@@ -266,10 +280,9 @@ func CreateFlight() (models.Flight, error) {
 		Destination:      destination,
 		FlightTime:       flightTime,
 		FlightDuration:   flightDuration,
-		FlightSeatsCosts: make([]int, 0),
+		FlightSeatsCosts: costs,
+		Airplane:         planeId,
 	}
-
-	log.Println("Id of flight generated on client:", flight.Id)
 
 	return flight, nil
 }

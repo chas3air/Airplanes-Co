@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// TODO: исправить у всех
 type Flight struct {
 	Id               uuid.UUID `json:"id" bson:"id"`
 	FromWhere        string    `json:"fromWhere" bson:"fromWhere"`
@@ -14,6 +15,7 @@ type Flight struct {
 	FlightTime       time.Time `json:"flightTime" bson:"flightTime"`
 	FlightDuration   int       `json:"flightDuration" bson:"flightDuration"`
 	FlightSeatsCosts []int     `json:"flightSeatsCost" bson:"flightSeatsCost"`
+	Airplane         uuid.UUID `json:"airplane"`
 }
 
 func (f Flight) String() string {
