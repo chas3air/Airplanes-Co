@@ -158,7 +158,9 @@ func ClearHandler(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
 	var tickets = TicketsCart[id]
-	TicketsCart[id] = make([]models.Ticket, 0)
+	delete(TicketsCart, id)
+
+	log.Println("Size of ticket card of current user:", len(TicketsCart[id]))
 
 	writeJSONResponse(w, http.StatusOK, tickets)
 }

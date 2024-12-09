@@ -117,38 +117,34 @@ func InsertTicket(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	var ticket models.Ticket
-	err = json.Unmarshal(bs, &ticket)
+	log.Println("Text comes to dal_tickets:", string(bs))
+
+	var tickets []models.Ticket
+	err = json.Unmarshal(bs, &tickets)
 	if err != nil {
 		log.Println("Cannot unmarshal request body to ticket")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	obj, err := TicketsDB.Insert(ctx, ticket)
-	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			log.Println("Request timed out")
-			http.Error(w, "Request timed out", http.StatusGatewayTimeout)
-			return
-		} else {
-			log.Printf("Error inserting ticket with ID: %d\n", ticket.Id)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+	for _, ticket := range tickets {
+		_, err := TicketsDB.Insert(ctx, ticket)
+		if err != nil {
+			if ctx.Err() == context.DeadlineExceeded {
+				log.Println("Request timed out")
+				http.Error(w, "Request timed out", http.StatusGatewayTimeout)
+				return
+			} else {
+				log.Printf("Error inserting ticket with ID: %d\n", ticket.Id)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 
-	out_bs, err := json.Marshal(obj)
-	if err != nil {
-		log.Println("Cannot marshal inserted ticket")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(out_bs)
-	log.Printf("Successfully inserted ticket with ID: %d\n", ticket.Id)
+	w.WriteHeader(http.StatusCreated)
+	log.Println("Successfully inserted ticket")
 }
 
 func UpdateTicket(w http.ResponseWriter, r *http.Request) {

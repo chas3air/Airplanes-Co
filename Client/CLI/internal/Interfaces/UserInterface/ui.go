@@ -103,22 +103,33 @@ func UserInterface(user *models.Customer) {
 			ticketsFromCart, err := ticketsfunctions.GetTicketFromCart(user.Id)
 			if err != nil {
 				fmt.Println("Error:", err)
+
+				fmt.Println("Press Enter to continue...")
+				bufio.NewReader(os.Stdin).ReadString('\n')
 			}
 
 			fmt.Println("Tickets in cart")
-
-			ticketsfunctions.PrintTickets(ticketsFromCart, "ID", "Owner")
+			if len(ticketsFromCart) > 0 {
+				ticketsfunctions.PrintTickets(ticketsFromCart, "ID", "Owner")
+			}
 
 			fmt.Println("Press Enter to continue...")
 			bufio.NewReader(os.Stdin).ReadString('\n')
 
 		case "4":
-			//TODO: тут надо написать функцию которая получает общую сумму билетов клиента
 			fmt.Println("Pay for cart")
 
 			card_number := service.GetInput(scanner, "Enter card number")
+			var sum_cost int
+			tickets, err := ticketsfunctions.GetTicketFromCart(user.Id)
+			if err != nil {
+				fmt.Println("Error:", err)
+			}
+			for _, v := range tickets {
+				sum_cost += v.TicketCost
+			}
 
-			err := ticketsfunctions.PayForTickets(card_number)
+			err = ticketsfunctions.PayForTickets(user.Id, card_number, sum_cost)
 			if err != nil {
 				fmt.Println("Error:", err)
 				fmt.Println("Press Enter to continue...")

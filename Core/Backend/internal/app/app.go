@@ -34,6 +34,7 @@ func Run() {
 
 	r.HandleFunc("/cart", tickets_routes.GetTicketsFromCartHandler).Methods(http.MethodGet)
 	r.HandleFunc("/cart", tickets_routes.InsertTicketToCartHandler).Methods(http.MethodPost)
+	r.HandleFunc("/cart/clear/{id}", tickets_routes.ClearTicketCartHandler).Methods(http.MethodDelete)
 
 	r.HandleFunc("/purchasedTickets", tickets_routes.GetPurchasedTicketHandler).Methods(http.MethodGet)
 

@@ -149,8 +149,19 @@ func getTotalWidth(widths []int) int {
 	return total
 }
 
-func PayForTickets(card_number string) error {
-	bs, err := json.Marshal(card_number)
+// TODO: доделать оплату билета
+func PayForTickets(id uuid.UUID, card_number string, sum_cost int) error {
+	var payData = struct {
+		CardNumber  string `json:"card_number"`
+		BankAccount string `json:"bank_account"`
+		Cost        int    `json:"cost"`
+	}{
+		CardNumber:  card_number,
+		BankAccount: "",
+		Cost:        sum_cost,
+	}
+
+	bs, err := json.Marshal(payData)
 	if err != nil {
 		return err
 	}
@@ -159,7 +170,7 @@ func PayForTickets(card_number string) error {
 		Timeout: limitTime,
 	}
 
-	resp, err := httpClient.Post(config.Backend_url+"/payment", "application/json", bytes.NewReader(bs))
+	resp, err := httpClient.Post(config.Backend_url+"/payment?ownerId="+id.String(), "application/json", bytes.NewReader(bs))
 	if err != nil {
 		return err
 	}

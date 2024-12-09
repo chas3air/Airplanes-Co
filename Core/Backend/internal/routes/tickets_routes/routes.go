@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/chas3air/Airplanes-Co/Core/Backend/internal/config"
@@ -455,6 +456,43 @@ func GetTicketsFromCartHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Successfully fetched all tickets from management service.")
 }
 
+func ClearTicketCartHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Clear ticket card backend process...")
+
+	id := mux.Vars(r)["id"]
+
+	req, err := http.NewRequest(http.MethodDelete, config.Cart_api_url+"/"+id+"/clear", nil)
+	if err != nil {
+		log.Println("Cannot create request")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		handleError(w, err, "Cannoot do request")
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		handleError(w, fmt.Errorf("response code: %d", resp.StatusCode), "Response status: "+resp.Status)
+		return
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		handleError(w, err, "Cannot read response body")
+		return
+	}
+	log.Println("Cleared cart content for current user:", string(body))
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
+	w.Write(body)
+	log.Println("Successfully clear cart.")
+}
+
 func GetPurchasedTicketHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Fetching all purchased tickets backend process...")
 
@@ -546,19 +584,26 @@ func GetPurchasedTicketHandler(w http.ResponseWriter, r *http.Request) {
 
 func PayForTickets(w http.ResponseWriter, r *http.Request) {
 	log.Println("Pay for tickets backend process...")
+	id := r.URL.Query().Get("ownerId")
+	if id == "" {
+		handleError(w, fmt.Errorf("id is empty string"), "Id is empty")
+		return
+	}
 
-	var cardInfo string
-	err := json.NewDecoder(r.Body).Decode(&cardInfo)
+	var payData = struct {
+		CardNumber  string `json:"card_number"`
+		BankAccount string `json:"bank_account"`
+		Cost        int    `json:"cost"`
+	}{}
+
+	err := json.NewDecoder(r.Body).Decode(&payData)
 	if err != nil {
 		handleError(w, err, "Bad request: cannot parse body to cardInfo")
 		return
 	}
 
-	payInfo := models.PayInfo{
-		Cost:     66,
-		CardInfo: cardInfo,
-	}
-	body, err := json.Marshal(payInfo)
+	payData.BankAccount = os.Getenv("BANK_ACCOUNT")
+	body, err := json.Marshal(payData)
 	if err != nil {
 		handleError(w, err, "Cannot marshal ticket")
 		return
@@ -576,7 +621,7 @@ func PayForTickets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, err := http.NewRequest(http.MethodDelete, config.Cart_api_url+"/clear", nil)
+	req, err := http.NewRequest(http.MethodDelete, config.Cart_api_url+"/"+id+"/clear", nil)
 	if err != nil {
 		handleError(w, err, "Cannot create request to clear cart")
 		return
@@ -593,6 +638,37 @@ func PayForTickets(w http.ResponseWriter, r *http.Request) {
 		handleError(w, fmt.Errorf("error response code: %v", resp.StatusCode), "Error clearing cart")
 		return
 	}
+
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Bad request: cannot read response body")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	log.Println("Trying clearing cart for current user:", string(body))
+
+	resp, err = httpClient.Post(config.Management_tickets_api_url, "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		handleError(w, err, "Cannor do request")
+		return
+	}
+	defer resp.Body.Close()
+	log.Println("there1")
+
+	if resp.StatusCode >= 400 {
+		handleError(w, fmt.Errorf("response status: %s", resp.Status), "Response status: "+resp.Status)
+		return
+	}
+	log.Println("there2")
+
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Cannot read response body")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	log.Println("there3")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)

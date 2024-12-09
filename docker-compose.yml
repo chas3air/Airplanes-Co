@@ -221,14 +221,12 @@ services:
       CACHE_URL: http://cache:12011/cache
       LIMIT_RESPONSE_TIME: 5
 
-  # payment:
-  #   build: 
-  #     context: ./Core/Payment
-  #   container_name: payment
-  #   networks:
-  #     - db
-  #   environment:
-  #     BANK_ACCOUNT: "1234-5678-9012-3456"
+  payment:
+    build: 
+      context: ./Core/Payment
+    container_name: payment
+    networks:
+      - db
 
   backend:
     build: 
@@ -248,6 +246,7 @@ services:
       PURCHASED_TICKETS_API_URL: http://purchased_tickets:12010/purchased-tickets
       PAYMENT_API_URL: http://payment:12010
       LIMIT_RESPONSE_TIME: 5
+      BANK_ACCOUNT: 1234-5678-9012-3456
 
   cli:
     build: 

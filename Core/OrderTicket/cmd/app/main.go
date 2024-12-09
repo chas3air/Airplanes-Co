@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/chas3air/Airplanes-Co/Core/OrderTicket/internal/app"
+	"github.com/chas3air/Airplanes-Co/Core/Checkbook/internal/app"
 )
 
 func main() {

@@ -1,7 +1,12 @@
 package ui
 
 import (
+	"errors"
+	"net/http"
+
+	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/config"
 	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/models"
+	"github.com/chas3air/Airplanes-Co/Client/CLI/internal/service"
 	"github.com/google/uuid"
 )
 
@@ -17,4 +22,27 @@ func CreateTicket(userID uuid.UUID, flight models.Flight, cost int, classOfServi
 	}
 
 	return ticket
+}
+
+func ClearCart(userId uuid.UUID) error {
+	req, err := http.NewRequest(http.MethodDelete, config.Backend_url+"/cart/clear/"+userId.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	httpClient := &http.Client{
+		Timeout: service.GetLimitTime(),
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		return errors.New("Response status: " + resp.Status)
+	}
+
+	return nil
 }

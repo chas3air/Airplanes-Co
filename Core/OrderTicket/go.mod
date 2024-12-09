@@ -1,4 +1,4 @@
-module github.com/chas3air/Airplanes-Co/Core/OrderTicket
+module github.com/chas3air/Airplanes-Co/Core/Checkbook
 
 go 1.22.3
 
